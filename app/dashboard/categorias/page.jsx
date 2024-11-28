@@ -23,7 +23,6 @@ export default function Categorias() {
     const [registrosPorPagina] = useState(5); // Cantidad de registros por página
     const [open, setOpen] = useState(false);
     const [agregar, setAgregar] = useState(false);
-    const [ver, setVer] = useState(false);
     const [editar, setEditar] = useState(false);
     const [selectedCategoriaId, setSelectedCategoriaId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -201,15 +200,6 @@ export default function Categorias() {
                                                                 }}
                                                             />
                                                             <HtmlTableButton
-                                                                color={"green"}
-                                                                tooltip={"Ver Categoría"}
-                                                                icon={Eye}
-                                                                onClick={() => {
-                                                                    setSelectedCategoriaId(categoria.CategoriaProductoID);
-                                                                    setVer(true);
-                                                                }}
-                                                            />
-                                                            <HtmlTableButton
                                                                 color={"red"}
                                                                 tooltip={"Eliminar Categoría"}
                                                                 icon={Trash}
@@ -270,7 +260,6 @@ export default function Categorias() {
                 </div>
                 <Eliminar open={open} onClose={() => setOpen(false)} categoriaId={selectedCategoriaId} onEliminar={eliminarCategoria} />
                 <Agregar open={agregar} onClose={() => setAgregar(false)} mutate={mutate} />
-                <Ver open={ver} onClose={() => setVer(false)} categoriaId={selectedCategoriaId} />
                 <Editar open={editar} onClose={() => setEditar(false)} categoriaId={selectedCategoriaId} mutate={mutate} />
             </div>
         </>
