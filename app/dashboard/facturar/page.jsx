@@ -11,13 +11,11 @@ import AgregarCLientePos from "@/app/components/pos/agregarClientePos";
 import IngresarInfoEmpresa from "@/app/components/pos/agregarInfoEmpresa";
 import AgregarProductoVenta from "@/app/components/pos/agregarProdVenta";
 import CardProducto from "@/app/components/pos/cartaComida";
-import CartaComida from "@/app/components/pos/cartaComida";
 import EditarProductoVenta from "@/app/components/pos/editarProdVenta";
 import EliminarProdVenta from "@/app/components/pos/eliminarProdVenta";
 import ModalRegistrarPago from "@/app/components/pos/modalPago";
-import PrintTicket from "@/app/components/pos/printTicket";
 import TicketFactura from "@/app/components/pos/ticket";
-import { Calendar, CalendarCheck, CoinsIcon, Computer, HandPlatter, Trash, User } from "lucide-react";
+import { Calendar, CalendarCheck, CoinsIcon, Computer, HandPlatter, Trash, User, Menu, X } from "lucide-react";
 import { getSession, useSession } from "next-auth/react";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { ClipLoader } from "react-spinners";
@@ -66,7 +64,8 @@ export default function App() {
   const [loadingClientes, onSet_loadingClientes] = useState(false);
   const fetchCalled = useRef(false);
 
-
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeView, setActiveView] = useState('productos');
   //Sesion
   const { data: session } = useSession();
 
@@ -437,48 +436,62 @@ export default function App() {
   //#endregion
 
   return (
-    <div style={{ overflow: 'hidden' }} className="flex h-screen">
-      <div className="w-5/6">
-        <div className="w-full p-4">
-          <nav className="flex" aria-label="Breadcrumb">
-            <ol className="pl-2 inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
-              <HtmlBreadCrumb items={itemsBreadCrumb} />
-            </ol>
-          </nav>
-        </div>
+    <div className="flex flex-col md:flex-row h-screen">
+  
+    {/* Mobile Bottom Bar */}
+    <div className="md:hidden fixed bottom-4 left-4 right-4 bg-custom-yellow text-black-600 rounded-full flex items-center justify-between p-4 shadow-lg z-50">
+      <div className="flex items-center gap-4">
+        <span className="text-lg font-semibold">Total: ₡{total.toFixed(2)}</span>
+        <span className="text-lg font-semibold">Productos: {rows.length}</span>
+      </div>
+      <button
+        onClick={() => setActiveView(activeView === 'factura' ? 'productos' : 'factura')}
+        className="bg-white text-blue-500 px-4 py-2 rounded-full font-medium"
+      >
+        {activeView === 'factura' ? 'Cerrar' : 'Ver'}
+      </button>
+    </div>
 
-        {
-          loadingCategorias ? (
-            <div className="flex items-center justify-center m-4">
-              <ClipLoader size={30} speedMultiplier={1.5} />
-            </div>
-          ) : (
+    {/* Products Section */}
+    <div
+      className={`
+        w-full md:w-5/6 
+        ${activeView === 'productos' ? 'block' : 'hidden md:block'}
+      `}
+    >
+      <div className="w-full p-4">
+        <nav className="flex" aria-label="Breadcrumb">
+          <ol className="pl-2 inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
+            <HtmlBreadCrumb items={["Home", "Facturar"]} />
+          </ol>
+        </nav>
+      </div>
+
+      {loadingCategorias ? (
+        <div className="flex items-center justify-center m-4">
+          <ClipLoader size={30} speedMultiplier={1.5} />
+        </div>
+      ) : (
         <div className="w-full pl-4 pr-4">
           <div className="block w-full p-2 bg-white border border-gray-200 rounded-lg shadow">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mx-auto">
+              {existeCajaAbierta && (
+                <HtmlButton
+                  colSize={1}
+                  color={"indigo"}
+                  legend={"Agregar Producto"}
+                  icon={HandPlatter}
+                  onClick={() => openModalAgregar(true)}
+                />
+              )}
+            </div>
 
-
-              <div className="grid grid-cols-2 md:grid-cols-1 gap-4 mx-auto">
-                {
-                  existeCajaAbierta ? (
-                    <>
-                      <HtmlButton colSize={1} color={"indigo"} legend={"Agregar Producto"} icon={HandPlatter} onClick={() => openModalAgregar(true)} />
-                    </>
-                  ) : null
-                }
-              </div>
-            
-            
-        <div className="flex flex-col w-full h-full overflow-y-auto">
-          {
-            existeCajaAbierta ? (
-              <div className="p-2">
-
-                <div className="border-b border-gray-200 dark:border-gray-700">
-                  <ul className="flex flex-wrap -mb-px text-sm font-medium text-center text-gray-500 dark:text-gray-400">
-
-                  {
-                    
-                      categorias.map((item, index) => (
+            <div className="flex flex-col w-full h-full overflow-y-auto">
+              {existeCajaAbierta ? (
+                <div className="p-2">
+                  <div className="border-b border-gray-200 dark:border-gray-700">
+                    <ul className="flex flex-wrap -mb-px text-sm font-medium text-center text-gray-500 dark:text-gray-400">
+                      {categorias.map((item, index) => (
                         <li className="me-3" key={index}>
                           <a
                             href="#"
@@ -489,22 +502,16 @@ export default function App() {
                             {item.nombre}
                           </a>
                         </li>
-                      ))
-                    
-                  }
+                      ))}
+                    </ul>
+                  </div>
 
-                    
-
-                  </ul>
-                </div>
-                
-                {
-                  loadingProdVenta ? (
-                        <div className="flex items-center justify-center m-4">
-                          <ClipLoader size={30} speedMultiplier={1.5} />
-                        </div>
+                  {loadingProdVenta ? (
+                    <div className="flex items-center justify-center m-4">
+                      <ClipLoader size={30} speedMultiplier={1.5} />
+                    </div>
                   ) : (
-                    <div style={{ maxHeight: '22rem', overflowY: 'auto' }} className="mt-4 grid grid-cols-2 items-stretch sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
                       {productos.map((item, index) => {
                         var bufferImagen;
                         var imgBase64;
@@ -515,10 +522,9 @@ export default function App() {
                           bufferImagen = Buffer.from(item.imagen.data);
                           imgBase64 = bufferImagen.toString('base64');
                           imgSrc = `data:${item.tipoImagen};base64,${imgBase64}`;
-                          typeImg = item.tipoImagen
-                        }
-                        else {
-                          imgSrc = "/petote.png"
+                          typeImg = item.tipoImagen;
+                        } else {
+                          imgSrc = "/petote.png";
                           typeImg = "default";
                         }
 
@@ -548,37 +554,42 @@ export default function App() {
                         );
                       })}
                     </div>
-                  )
-                }
-
-
-              </div>
-            ) :
-            null
-
-          }
-
-        </div>
-
-
-          
-
+                  )}
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
-        )}
-
-      </div>
+      )}
+    </div>
+    
       {/* Card Factura */}
-      {
-        existeCajaAbierta ? (
-          <aside style={{ overflow: 'hidden', width: '35%', height: '96vh' }} className=" overflow-y-auto">
-            {
-              loadingGeneral ? (
-                <div className="flex items-center justify-center m-5">
-                  <ClipLoader size={30} speedMultiplier={1.5} />
-                </div>
-              ) :
-              (
+      <aside
+  className={`
+    w-full md:w-1/3 
+    ${activeView === 'factura' ? 'block' : 'hidden md:block'}
+    overflow-y-auto p-2
+  `}
+>
+  {existeCajaAbierta ? (
+    loadingGeneral ? (
+      <div className="flex items-center justify-center m-5">
+        <ClipLoader size={30} speedMultiplier={1.5} />
+      </div>
+    ) : (
+      <div className="w-full h-full p-4 bg-white border border-gray-200 rounded-lg shadow">
+        {total > 0 && (
+          <div className="px-2 pt-2">
+            <div className="flex justify-between dark:text-gray-100">
+              <h3 className="font-semibold text-lg">Total Factura:</h3>
+              <p className="font-semibold text-lg">
+                <span>₡</span> {total.toFixed(2)}
+              </p>
+            </div>
+          </div>
+        )}
+        <div className="w-full pl-2 pr-1">
+
                 <>
                     <div className="w-full pl-2 pr-1 ">
                       <div className="block w-full h-screen p-4 bg-white border border-gray-200 rounded-lg shadow overflow-hidden">
@@ -699,11 +710,12 @@ export default function App() {
                       </div>
                     </div>
                 </>
-              )
-            }
-          </aside>
-        ) : null
-      }
+               </div>
+               </div>
+             )
+           ) : null}
+         </aside>
+      
 
       <AgregarProductoVenta listadoCategorias={catalogoCategoria} open={modalAgregar} onClose={() => openModalAgregar(false)} reloadProducts={onSearch_ProductosVenta} />
       <MultipleSelectCliente open={modalMultipleClientes} onClose={() => onModal_MultiplesClientes(false)} listaClientes={listaMultiplesClientes} handleClienteInput={onChange_Cliente} />
