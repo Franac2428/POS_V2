@@ -436,43 +436,44 @@ export default function App() {
   //#endregion
 
   return (
-    <div className="flex flex-col md:flex-row h-screen">
+    <div className="flex flex-col md:flex-col h-screen">
   
-    {/* Mobile Bottom Bar */}
-    <div className="md:hidden fixed bottom-4 left-4 right-4 bg-custom-yellow text-black-600 rounded-full flex items-center justify-between p-4 shadow-lg z-50">
-      <div className="flex items-center gap-4">
-        <span className="text-lg font-semibold">Total: ₡{total.toFixed(2)}</span>
-        <span className="text-lg font-semibold">Productos: {rows.length}</span>
-      </div>
-      <button
-        onClick={() => setActiveView(activeView === 'factura' ? 'productos' : 'factura')}
-        className="bg-white text-blue-500 px-4 py-2 rounded-full font-medium"
-      >
-        {activeView === 'factura' ? 'Cerrar' : 'Ver'}
-      </button>
-    </div>
+  <div className="max-[1022px]:fixed max-[1022px]:bottom-4 max-[1022px]:left-4 max-[1022px]:right-4 max-[1022px]:bg-custom-yellow max-[1022px]:text-black-600 max-[1022px]:rounded-full max-[1022px]:flex max-[1022px]:items-center max-[1022px]:justify-between max-[1022px]:p-4 max-[1022px]:shadow-lg hidden z-10">
+  <div className="flex items-center gap-4">
+    <span className="text-sm font-semibold">Total: ₡{total.toFixed(2)}</span>
+    <span className="text-sm font-semibold">Productos: {rows.length}</span>
+  </div>
+  <button
+    onClick={() => setActiveView(activeView === 'factura' ? 'productos' : 'factura')}
+    className="bg-white text-blue-500 px-4 py-2 rounded-full font-medium"
+  >
+    Ver Orden
+  </button>
+</div>
 
-    {/* Products Section */}
-    <div
-      className={`
-        w-full md:w-5/6 
-        ${activeView === 'productos' ? 'block' : 'hidden md:block'}
-      `}
-    >
-      <div className="w-full p-4">
+
+    <div className="w-full p-4">
         <nav className="flex" aria-label="Breadcrumb">
           <ol className="pl-2 inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
             <HtmlBreadCrumb items={["Home", "Facturar"]} />
           </ol>
         </nav>
       </div>
+    <div className="flex flex-col md:flex-row h-screen">
 
+    {/* Products Section */}
+    <div
+      className={`
+        w-full min-[1022px]:w-5/6 
+        ${activeView === 'productos' ? 'block' : 'hidden lg:block'}
+      `}
+    >
       {loadingCategorias ? (
         <div className="flex items-center justify-center m-4">
           <ClipLoader size={30} speedMultiplier={1.5} />
         </div>
       ) : (
-        <div className="w-full pl-4 pr-4">
+        <div className="w-full min-[1022px]:pl-4 min-[1022px]:pr-4">
           <div className="block w-full p-2 bg-white border border-gray-200 rounded-lg shadow">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mx-auto">
               {existeCajaAbierta && (
@@ -486,9 +487,9 @@ export default function App() {
               )}
             </div>
 
-            <div className="flex flex-col w-full h-full overflow-y-auto">
+            <div className="flex flex-col w-full h-full ">
               {existeCajaAbierta ? (
-                <div className="p-2">
+                <div className="px-2 pt-2 pb-10">
                   <div className="border-b border-gray-200 dark:border-gray-700">
                     <ul className="flex flex-wrap -mb-px text-sm font-medium text-center text-gray-500 dark:text-gray-400">
                       {categorias.map((item, index) => (
@@ -511,7 +512,7 @@ export default function App() {
                       <ClipLoader size={30} speedMultiplier={1.5} />
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
                       {productos.map((item, index) => {
                         var bufferImagen;
                         var imgBase64;
@@ -566,9 +567,9 @@ export default function App() {
       {/* Card Factura */}
       <aside
   className={`
-    w-full md:w-1/3 
-    ${activeView === 'factura' ? 'block' : 'hidden md:block'}
-    overflow-y-auto p-2
+    w-full min-[1022px]:w-1/3 
+    ${activeView === 'factura' ? 'block' : 'hidden min-[1022px]:block'}
+    px-2
   `}
 >
   {existeCajaAbierta ? (
@@ -577,21 +578,7 @@ export default function App() {
         <ClipLoader size={30} speedMultiplier={1.5} />
       </div>
     ) : (
-      <div className="w-full h-full p-4 bg-white border border-gray-200 rounded-lg shadow">
-        {total > 0 && (
-          <div className="px-2 pt-2">
-            <div className="flex justify-between dark:text-gray-100">
-              <h3 className="font-semibold text-lg">Total Factura:</h3>
-              <p className="font-semibold text-lg">
-                <span>₡</span> {total.toFixed(2)}
-              </p>
-            </div>
-          </div>
-        )}
-        <div className="w-full pl-2 pr-1">
-
                 <>
-                    <div className="w-full pl-2 pr-1 ">
                       <div className="block w-full h-screen p-4 bg-white border border-gray-200 rounded-lg shadow overflow-hidden">
 
                         {/* Legends info */}
@@ -620,7 +607,7 @@ export default function App() {
 
                         {/* Details */}
                         <div className="">
-                          <div style={{ maxHeight: '19rem', overflowY: 'auto' }}>
+                          <div style={{ maxHeight: '24rem', overflowY: 'auto' }}>
                             <table className="w-full border-collapse table-auto">
                               <thead>
                                 <tr className="bg-gray-200">
@@ -708,15 +695,12 @@ export default function App() {
                           )}
                         </div>
                       </div>
-                    </div>
                 </>
-               </div>
-               </div>
              )
            ) : null}
          </aside>
       
-
+         </div>
       <AgregarProductoVenta listadoCategorias={catalogoCategoria} open={modalAgregar} onClose={() => openModalAgregar(false)} reloadProducts={onSearch_ProductosVenta} />
       <MultipleSelectCliente open={modalMultipleClientes} onClose={() => onModal_MultiplesClientes(false)} listaClientes={listaMultiplesClientes} handleClienteInput={onChange_Cliente} />
       <ModalRegistrarPago open={modalRegistrarPago} onClose={() => onModal_RegistrarPago(false)} objFactura={modelFactura} onReload={onClear_Factura} />

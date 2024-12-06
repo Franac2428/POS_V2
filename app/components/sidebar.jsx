@@ -14,7 +14,7 @@ export default function Sidebar({ pageTitle = "Punto de Venta" }) {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth <= 768) {
+      if (window.innerWidth <= 1380) {
         setIsSmallScreen(true);
       } else {
         setIsSmallScreen(false);
@@ -72,7 +72,7 @@ export default function Sidebar({ pageTitle = "Punto de Venta" }) {
 
   // Mobile Header with Hamburger Menu
   const MobileSiteHeader = () => (
-    <div className="md:hidden fixed top-0 left-0 right-0 z-30 flex justify-between items-center p-4 bg-white shadow-md">
+    <div className="min-[1380px]:hidden fixed top-0 left-0 right-0 z-30 flex justify-between items-center p-4 bg-white shadow-md">
       <h1 className="text-xl font-bold flex-grow text-center">{pageTitle}</h1>
       {/* Optional right-side action button */}
       <div className="w-6"></div> {/* Placeholder to center title */}
@@ -81,7 +81,7 @@ export default function Sidebar({ pageTitle = "Punto de Venta" }) {
    const HamburgerButton = () => (
     <button 
       onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-      className="fixed top-3 left-4 z-50 p-2 bg-custom-yellow  rounded-lg md:hidden shadow-lg"
+      className="fixed top-3 left-4 z-50 p-2 bg-custom-yellow  rounded-lg min-[1380px]:hidden shadow-sm"
     >
       {isMobileMenuOpen ? <icon.X size={24} /> : <icon.AlignLeft size={24} />}
     </button>
@@ -97,7 +97,7 @@ export default function Sidebar({ pageTitle = "Punto de Venta" }) {
       `}
     >
       <nav className="h-full flex flex-col">
-        <div className="p-4 pb-2 flex justify-between items-center bg-custom-yellow">
+        <div className="py-4 pl-10 pb-2 flex justify-between items-center bg-custom-yellow">
           <Image 
             src="/nombre.png" 
             width={200} 
