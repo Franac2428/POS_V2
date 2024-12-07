@@ -17,13 +17,19 @@ const LineaProducto = ({
 }) => {
 
   const handleChangeQuantity = (e, id, name) => {
-    const newQuantity = parseInt(e.target.value, 10);
+    let newQuantity = e.target.value === "" ? null : parseInt(e.target.value, 10);
 
+    if (isNaN(newQuantity)) {
+      newQuantity = 0; // Manejo para entradas vacías o no numéricas
+    }    
     if (name === "cantidad" && newQuantity < 0) {
       toast.warning("No puede colocar valores negativos");
     } else if (newQuantity === 0) {
       toast.info("La línea se elimina debido a la cantidad 0");
       onDelete({ id, idProductoVenta, cantMinima, cantProducto }); 
+    } else if (newQuantity > cantProducto + 1 ) {
+        toast.error("No puede ordenar una cantidad mayor a la disponible");
+        newQuantity = cantProducto;     
     } else {
       onChange(e, id, name); 
     }
