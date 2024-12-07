@@ -72,7 +72,7 @@ export default function Sidebar({ pageTitle = "Punto de Venta" }) {
 
   // Mobile Header with Hamburger Menu
   const MobileSiteHeader = () => (
-    <div className="min-[1380px]:hidden fixed top-0 left-0 right-0 z-30 flex justify-between items-center p-4 bg-white shadow-md">
+    <div className="min-[1380px]:hidden fixed top-0 left-0 right-0 z-30 flex justify-between items-center p-4 bg-white shadow-sm">
       <h1 className="text-xl font-bold flex-grow text-center">{pageTitle}</h1>
       {/* Optional right-side action button */}
       <div className="w-6"></div> {/* Placeholder to center title */}

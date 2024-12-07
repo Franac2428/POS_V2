@@ -12,6 +12,7 @@ import IngresarInfoEmpresa from "@/app/components/pos/agregarInfoEmpresa";
 import AgregarProductoVenta from "@/app/components/pos/agregarProdVenta";
 import CardProducto from "@/app/components/pos/cartaComida";
 import EditarProductoVenta from "@/app/components/pos/editarProdVenta";
+import LineaProducto from "@/app/components/pos/lineaDetalle"
 import EliminarProdVenta from "@/app/components/pos/eliminarProdVenta";
 import ModalRegistrarPago from "@/app/components/pos/modalPago";
 import TicketFactura from "@/app/components/pos/ticket";
@@ -276,25 +277,47 @@ export default function App() {
 
   //#region [DETALLES FACTURA]
   const onAdd_LineaDetalle = (obj) => {
-    
-     //document.getElementById("txtSelCliente").classList.remove("is-invalid");
-
-      const newRow = {
-        id: rows.length + 1,
-        cantidad: 1,
-        detalles: obj.nombre,
-        precio: Number(obj.precio),
-        idProductoVenta: Number(obj.productoVentaId),
-        cantMinima: Number(obj.cantMinima),
-        cantProducto: Number(obj.cantDisponible),
-        noRebajaInventario: obj.noRebajaInventario
-      };
-
-      setRows([...rows, newRow]);
-      setTotal(total + Number(newRow.precio * newRow.cantidad));
-    
+    setRows((prevRows) => {
+      const existingIndex = prevRows.findIndex(
+        (row) => row.idProductoVenta === obj.productoVentaId
+      );
+  
+      if (existingIndex !== -1) {
+        // Product already exists, increase quantity
+        const updatedRows = [...prevRows];
+        updatedRows[existingIndex] = {
+          ...updatedRows[existingIndex],
+          cantidad: updatedRows[existingIndex].cantidad + 1
+        };
+  
+        // Recalculate total
+        const newTotal = updatedRows.reduce(
+          (acc, curr) => acc + (Number(curr.cantidad) * Number(curr.precio)), 
+          0
+        );
+        setTotal(Number(newTotal.toFixed(2)));
+  
+        return updatedRows;
+      } else {
+        // Product doesn't exist, add new row
+        const newRow = {
+          id: rows.length + 1,
+          cantidad: 1,
+          detalles: obj.nombre,
+          precio: Number(obj.precio),
+          idProductoVenta: Number(obj.productoVentaId),
+          cantMinima: Number(obj.cantMinima),
+          cantProducto: Number(obj.cantDisponible),
+          noRebajaInventario: obj.noRebajaInventario,
+          imagen: obj.imagen,
+        };
+        
+        // Add new row and update total
+        setTotal(total + Number(newRow.precio * newRow.cantidad));
+        return [...prevRows, newRow];
+      }
+    });
   };
-
   const onDelete_LineaDetalle = (item) => {
     const updatedRows = rows.filter((row) => row.id !== item.id);
     setRows(updatedRows);
@@ -605,85 +628,35 @@ export default function App() {
                             )
                         }
 
-                        {/* Details */}
-                        <div className="">
-                          <div style={{ maxHeight: '24rem', overflowY: 'auto' }}>
-                            <table className="w-full border-collapse table-auto">
-                              <thead>
-                                <tr className="bg-gray-200">
-                                  <th className="px-3 py-3 text-left text-sm font-medium text-black uppercase w-15 dark:bg-gray-700 dark:text-white">Cant.</th>
-                                  <th className="px-5 py-3 text-left text-sm font-medium text-black uppercase w-20 dark:bg-gray-700 dark:text-white">Detalles</th>
-                                  <th className="px-15 py-3 text-left text-sm font-medium text-black uppercase w-5 dark:bg-gray-700 dark:text-white">Precio</th>
-                                  <th className="px-6 py-3 text-left text-sm font-medium text-black uppercase dark:bg-gray-700 dark:text-white">...</th>
-                                  <th hidden className="px-6 py-3 text-left text-sm font-medium text-black uppercase dark:bg-gray-700 dark:text-white">IdProducto</th>
-                                  <th hidden className="px-6 py-3 text-left text-sm font-medium text-black uppercase dark:bg-gray-700 dark:text-white">CantMinima</th>
-                                  <th hidden className="px-6 py-3 text-left text-sm font-medium text-black uppercase dark:bg-gray-700 dark:text-white">CantDisponible</th>
-                                  <th hidden className="px-6 py-3 text-left text-sm font-medium text-black uppercase dark:bg-gray-700 dark:text-white">NoRebajaInventario</th>
+{/* Linea detalle */}
+<div className="">
+  <div className="flex flex-col">
+    {rows.map((row) => (
+      <LineaProducto
+        key={row.id}
+        id={row.id}
+        quantity={row.cantidad}
+        details={row.detalles}
+        price={row.precio}
+        idProductoVenta={row.idProductoVenta}
+        cantMinima={row.cantMinima}
+        cantProducto={row.cantProducto}
+        onDelete={onDelete_LineaDetalle}
+        onChange={onChange_CantPrecio}
+        image={row.imagen}
+      />
+    ))}
+  </div>
 
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {rows.map((row) => (
-                                  <tr key={row.id}>
-                                    <td className="px-2 py-4 whitespace-nowrap">
-                                      <input type="number" value={row.cantidad} max={row.cantProducto} onChange={(e) => onChange_CantPrecio(e, row.id, 'cantidad')} className="dark:bg-gray-900 dark:text-white border border-gray-300 text-gray-900 text-xs rounded-md focus:ring-blue-500 focus:border-blue-500 block w-14 p-1"
-                                      />
-                                    </td>
-                                    <td className="py-4 whitespace-nowrap">
-                                      <input
-                                        type="text"
-                                        value={row.detalles}
-                                        onChange={(e) => onChange_CantPrecio(e, row.id, 'detalles')}
-                                        className="dark:bg-gray-900 dark:text-white border border-gray-300 text-gray-900 text-xs rounded-md focus:ring-blue-500 focus:border-blue-500 block w-35 p-1"
-                                      />
-                                    </td>
-                                    <td className="px-3 py-4 whitespace-nowrap">
-                                      <input
-                                        type="text"
-                                        value={row.precio}
-                                        onChange={(e) => onChange_CantPrecio(e, row.id, 'precio')}
-                                        className="dark:bg-gray-900 dark:text-white border border-gray-300 text-gray-900 text-xs rounded-md focus:ring-blue-500 focus:border-blue-500 block w-16 p-1"
-                                      />
-                                    </td>
-                                    <td className="px-3 py-4 whitespace-nowrap">
-                                      <HtmlTableButton tooltip={"Eliminar Línea"} color={"red"} size={12} padding={2} icon={Trash} onClick={() => onDelete_LineaDetalle(row)} />
-                                    </td>
-                                    <td hidden className="px-3 py-4 whitespace-nowrap">
-                                      <input
-                                        type="text"
-                                        value={row.idProductoVenta}
-                                        className="dark:bg-gray-900 dark:text-white border border-gray-300 text-gray-900 text-xs rounded-md focus:ring-blue-500 focus:border-blue-500 block w-16 p-1"
-                                      />
-                                    </td>
-                                    <td hidden className="px-3 py-4 whitespace-nowrap">
-                                      <input
-                                        type="text"
-                                        value={row.cantMinima}
-                                        className="dark:bg-gray-900 dark:text-white border border-gray-300 text-gray-900 text-xs rounded-md focus:ring-blue-500 focus:border-blue-500 block w-16 p-1"
-                                      />
-                                    </td>
-                                    <td hidden className="px-3 py-4 whitespace-nowrap">
-                                      <input
-                                        type="text"
-                                        value={row.cantProducto}
-                                        className="dark:bg-gray-900 dark:text-white border border-gray-300 text-gray-900 text-xs rounded-md focus:ring-blue-500 focus:border-blue-500 block w-16 p-1"
-                                      />
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-
-                          <div className="px-2 pt-2">
-                            {total > 0 && (
-                              <div className="flex justify-between dark:text-gray-100">
-                                <h3 className="font-semibold text-lg">Total Factura:</h3>
-                                <p className="font-semibold text-lg"><span>₡</span> {total.toFixed(2)}</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+  {total > 0 && (
+    <div className="px-2 pt-2">
+      <div className="flex justify-between dark:text-gray-100">
+        <h3 className="font-semibold text-lg">Total Factura:</h3>
+        <p className="font-semibold text-lg"><span>₡</span> {total.toFixed(2)}</p>
+      </div>
+    </div>
+  )}
+</div>
                         <div className="pl-4 pr-4 grid grid-rows-12">
                           {total > 0 && (
 
