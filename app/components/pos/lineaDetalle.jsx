@@ -38,7 +38,7 @@ const LineaProducto = ({
   return (
     <div className="grid grid-cols-3 items-center bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
       {/* Columna 1: Imagen */}
-      <div className="flex justify-center items-center p-2">
+      <div className="flex justify-center items-center">
         <Image
           src={image}
           width={80}
@@ -48,7 +48,7 @@ const LineaProducto = ({
         />
       </div>
 
-      <div className="flex flex-col items-start justify-between p-2 space-y-2">
+      <div className="flex flex-col items-start justify-between space-y-2">
         {/* Detalles del producto: ahora es solo texto, no editable */}
         <span className=" text-gray-900 text-md font-semibold rounded-md block w-35 p-1">{details}</span>
         <div className="flex items-center space-x-2">
@@ -80,7 +80,7 @@ const LineaProducto = ({
       <div className="flex flex-col items-end justify-between p-2 space-y-2">
         {/* Precio: ahora es solo texto, no editable */}
         <div className="flex items-center space-x-1">
-          <span className="text-gray-900 text-md rounded-md font-medium block w-16 p-1">₡ {price}</span>
+          <span className="text-gray-900 text-md rounded-md font-medium">₡ {price}</span>
         </div>
         <HtmlTableButton
           tooltip={"Eliminar Línea"}
@@ -88,7 +88,7 @@ const LineaProducto = ({
           size={12}
           padding={2}
           icon={Trash}
-          onClick={() => onDelete({ id, idProductoVenta, cantMinima, cantProducto })}
+          onClick={() => onDelete({ id, idProductoVenta, cantMinima, quantity })}
         />
       </div>
     </div>
