@@ -17,7 +17,7 @@ export default function CardProducto({ producto, agregarProductoTabla, onSelectP
 
   useEffect(() => {
     if (productoEliminado && productoEliminado.idProductoVenta === productoState.productoVentaId) {
-      setProductoState(prevState => ({
+      setProductoState((prevState) => ({
         ...prevState,
         cantDisponible: prevState.cantDisponible + productoEliminado.quantity
       }));

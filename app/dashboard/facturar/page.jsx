@@ -318,6 +318,23 @@ export default function App() {
       }
     });
   };
+  const onChangeQuantity_LineaDetalle = (item, newQuantity) => {
+    const updatedRows = rows.map((row) => {
+      if (row.id === item.id) {
+        return { ...row, cantidad: newQuantity };
+      }
+      return row;
+    });  
+    setRows(updatedRows);
+      const diff = item.quantity - newQuantity;  
+    onReturn_Producto({
+      ...item,
+      quantity: diff * -1, 
+    });
+      const newTotal = updatedRows.reduce((acc, curr) => acc + (Number(curr.cantidad) * Number(curr.precio)), 0);
+    setTotal(Number(newTotal.toFixed(2)));
+  };
+  
   const onDelete_LineaDetalle = (item) => {
     const updatedRows = rows.filter((row) => row.id !== item.id);
     setRows(updatedRows);
@@ -644,7 +661,7 @@ export default function App() {
                     cantMinima={row.cantMinima}
                     cantProducto={row.cantProducto}
                     onDelete={onDelete_LineaDetalle}
-                    onChange={onChange_CantPrecio}
+                    onChangeQuantity={onChangeQuantity_LineaDetalle}
                     image={row.imagen}
                   />
                 ))}

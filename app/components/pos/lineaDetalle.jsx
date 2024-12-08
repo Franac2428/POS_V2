@@ -12,7 +12,7 @@ const LineaProducto = ({
   cantMinima,
   cantProducto,
   onDelete,
-  onChange,
+  onChangeQuantity,
   image
 }) => {
 
@@ -31,7 +31,23 @@ const LineaProducto = ({
         toast.error("No puede ordenar una cantidad mayor a la disponible");
         newQuantity = cantProducto;     
     } else {
-      onChange(e, id, name); 
+      onChangeQuantity({ id,idProductoVenta, quantity, cantProducto }, newQuantity);
+    }
+  };
+  const handleDecreaseQuantity = () => {
+    if (quantity > 0) {
+      onChangeQuantity({ id,idProductoVenta, quantity, cantProducto }, quantity - 1); // Enviamos el nuevo valor al padre
+    } else {
+      toast.warning("No puede colocar valores negativos");
+    }
+  };
+  
+  
+  const handleIncreaseQuantity = () => {
+    if (quantity < cantProducto) {
+      onChangeQuantity({ id, idProductoVenta, quantity, cantProducto }, quantity + 1); // Enviamos el nuevo valor al padre
+    } else {
+      toast.error("No puede ordenar una cantidad mayor a la disponible");
     }
   };
 
@@ -52,9 +68,9 @@ const LineaProducto = ({
         {/* Detalles del producto: ahora es solo texto, no editable */}
         <span className=" text-gray-900 text-md font-semibold rounded-md block w-35 p-1">{details}</span>
         <div className="flex items-center space-x-2">
-          <button
+        <button
             type="button"
-            onClick={() => handleChangeQuantity({ target: { value: quantity - 1 } }, id, 'cantidad')}
+            onClick={handleDecreaseQuantity}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-500"
           >
             <Minus className="w-4 h-4" />
@@ -67,13 +83,13 @@ const LineaProducto = ({
             onChange={(e) => handleChangeQuantity(e, id, 'cantidad')}
             className="dark:bg-gray-900 dark:text-white border border-gray-300 text-gray-900 text-xs rounded-md focus:ring-blue-500 focus:border-blue-500 block w-14 p-1 text-center"
           />
-          <button
-            type="button"
-            onClick={() => handleChangeQuantity({ target: { value: quantity + 1 } }, id, 'cantidad')}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-500"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
+            <button
+              type="button"
+              onClick={handleIncreaseQuantity}
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-500"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
         </div>
       </div>
 
