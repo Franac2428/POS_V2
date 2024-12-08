@@ -16,7 +16,7 @@ import LineaProducto from "@/app/components/pos/lineaDetalle"
 import EliminarProdVenta from "@/app/components/pos/eliminarProdVenta";
 import ModalRegistrarPago from "@/app/components/pos/modalPago";
 import TicketFactura from "@/app/components/pos/ticket";
-import { Calendar, CalendarCheck, CoinsIcon, Computer, HandPlatter, Trash, User, Menu, X } from "lucide-react";
+import { Calendar, Banknote, CoinsIcon, Computer, HandPlatter, Trash, User, Menu, X } from "lucide-react";
 import { getSession, useSession } from "next-auth/react";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { ClipLoader } from "react-spinners";
@@ -460,21 +460,22 @@ export default function App() {
 
   return (
     <div className="flex flex-col md:flex-col h-screen">
-  
-  <div className="max-[1022px]:fixed max-[1022px]:bottom-4 max-[1022px]:left-4 max-[1022px]:right-4 max-[1022px]:bg-custom-yellow max-[1022px]:text-black-600 max-[1022px]:rounded-full max-[1022px]:flex max-[1022px]:items-center max-[1022px]:justify-between max-[1022px]:p-4 max-[1022px]:shadow-lg hidden z-10">
-  <div className="flex items-center gap-4">
+  {activeView !== 'factura' && (
+
+  <div className=" max-[1022px]:fixed max-[1022px]:bottom-4 max-[1022px]:left-4 max-[1022px]:right-4 max-[1022px]:bg-white max-[1022px]:text-black-600 max-[1022px]:rounded-full max-[1022px]:flex max-[1022px]:items-center max-[1022px]:justify-between max-[1022px]:p-4 max-[1022px]:shadow-lg border-blue-500 border-4 hidden z-10">
+  <div className="flex items-center pl-6 gap-4">
     <span className="text-sm font-semibold">Total: ₡{total.toFixed(2)}</span>
     <span className="text-sm font-semibold">Productos: {rows.length}</span>
   </div>
-  <button
-    onClick={() => setActiveView(activeView === 'factura' ? 'productos' : 'factura')}
-    className="bg-white text-blue-500 px-4 py-2 rounded-full font-medium"
-  >
-    Ver Orden
-  </button>
-</div>
-
-
+  <HtmlButton
+                  colSize={1}
+                  color={"blue"}
+                  legend={"Orden"}
+                  icon={Banknote}
+                  onClick={() => setActiveView(activeView === 'factura' ? 'productos' : 'factura')}
+                  />
+    </div>
+    )}
     <div className="w-full p-4">
         <nav className="flex" aria-label="Breadcrumb">
           <ol className="pl-2 inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
@@ -592,7 +593,8 @@ export default function App() {
   className={`
     w-full min-[1022px]:w-1/3 
     ${activeView === 'factura' ? 'block' : 'hidden min-[1022px]:block'}
-    px-2
+    px-2 z-90
+
   `}
 >
   {existeCajaAbierta ? (
@@ -628,34 +630,36 @@ export default function App() {
                             )
                         }
 
-{/* Linea detalle */}
-<div className="">
-  <div className="flex flex-col">
-    {rows.map((row) => (
-      <LineaProducto
-        key={row.id}
-        id={row.id}
-        quantity={row.cantidad}
-        details={row.detalles}
-        price={row.precio}
-        idProductoVenta={row.idProductoVenta}
-        cantMinima={row.cantMinima}
-        cantProducto={row.cantProducto}
-        onDelete={onDelete_LineaDetalle}
-        onChange={onChange_CantPrecio}
-        image={row.imagen}
-      />
-    ))}
-  </div>
+            {/* Linea detalle */}
+            <div className="">
+              <div className="flex flex-col">
+                {rows.map((row) => (
+                  <LineaProducto
+                    key={row.id}
+                    id={row.id}
+                    quantity={row.cantidad}
+                    details={row.detalles}
+                    price={row.precio}
+                    idProductoVenta={row.idProductoVenta}
+                    cantMinima={row.cantMinima}
+                    cantProducto={row.cantProducto}
+                    onDelete={onDelete_LineaDetalle}
+                    onChange={onChange_CantPrecio}
+                    image={row.imagen}
+                  />
+                ))}
+              </div>
 
-  {total > 0 && (
-    <div className="px-2 pt-2">
-      <div className="flex justify-between dark:text-gray-100">
-        <h3 className="font-semibold text-lg">Total Factura:</h3>
-        <p className="font-semibold text-lg"><span>₡</span> {total.toFixed(2)}</p>
-      </div>
-    </div>
-  )}
+              {total > 0 && (
+                <div className="px-2 pt-2">
+                  <div className="flex justify-between dark:text-gray-100">
+                    <h3 className="font-semibold text-lg">Total Factura:</h3>
+                    <p className="font-semibold text-lg"><span>₡</span> {total.toFixed(2)}</p>
+                  </div>
+                </div>
+              )} 
+            
+
 </div>
                         <div className="pl-4 pr-4 grid grid-rows-12">
                           {total > 0 && (
@@ -667,7 +671,19 @@ export default function App() {
                             </div>
                           )}
                         </div>
+                        {activeView !== 'productos' && (
+
+                        <div className=" flex flex-col px-2 pt-2 items-end">
+                            <button
+                            className="mb-4 p-2 bg-gray-200 rounded-md shadow hover:bg-gray-300"
+                            onClick={() => setActiveView('productos')}
+                            >
+                            Volver a Productos
+                            </button>
+                            </div>
+                             )}
                       </div>
+                      
                 </>
              )
            ) : null}
