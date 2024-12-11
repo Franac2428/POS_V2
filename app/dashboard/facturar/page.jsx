@@ -326,7 +326,7 @@ export default function App() {
       return row;
     });  
     setRows(updatedRows);
-      const diff = item.quantity - newQuantity;  
+      const diff = newQuantity-item.quantity;  
     onReturn_Producto({
       ...item,
       quantity: diff * -1, 
