@@ -12,6 +12,7 @@ const LineaProducto = ({
   cantMinima,
   cantProducto,
   onDelete,
+  onChange,
   onChangeQuantity,
   image
 }) => {
@@ -66,8 +67,12 @@ const LineaProducto = ({
 
       <div className="flex flex-col items-start justify-between space-y-2">
         {/* Detalles del producto: ahora es solo texto, no editable */}
-        <span className=" text-gray-900 text-md font-semibold rounded-md block w-35 p-1">{details}</span>
-        <div className="flex items-center space-x-2">
+        <input
+            type="text"
+            value={details}
+            onChange={(e) => onChange(e, id, 'detalles')}
+            className="dark:bg-gray-900 dark:text-white border border-gray-300 text-gray-900 text-xs rounded-md focus:ring-blue-500 focus:border-blue-500 block w-35 p-1"
+          />        <div className="flex items-center space-x-2">
         <button
             type="button"
             onClick={handleDecreaseQuantity}
@@ -96,8 +101,12 @@ const LineaProducto = ({
       <div className="flex flex-col items-end justify-between p-2 space-y-2">
         {/* Precio: ahora es solo texto, no editable */}
         <div className="flex items-center space-x-1">
-          <span className="text-gray-900 text-md rounded-md font-medium">₡ {price}</span>
-        </div>
+        <input
+            type="text"
+            value={price}
+            onChange={(e) => onChange(e, id, 'precio')}
+            className="dark:bg-gray-900 dark:text-white border border-gray-300 text-gray-900 text-xs rounded-md focus:ring-blue-500 focus:border-blue-500 block w-16 p-1"
+          />        </div>
         <HtmlTableButton
           tooltip={"Eliminar Línea"}
           color={"red"}

@@ -661,6 +661,7 @@ export default function App() {
                     cantMinima={row.cantMinima}
                     cantProducto={row.cantProducto}
                     onDelete={onDelete_LineaDetalle}
+                    onChange={onChange_CantPrecio}
                     onChangeQuantity={onChangeQuantity_LineaDetalle}
                     image={row.imagen}
                   />
