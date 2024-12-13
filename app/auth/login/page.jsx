@@ -123,6 +123,7 @@ export default function Login() {
             </div>
 
             <CambioClave open={cambioClave} onClose={() => setCambioClave(false)} />
+            <Toaster richColors/>
         </div>
     );
 

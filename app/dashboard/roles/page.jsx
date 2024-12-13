@@ -114,10 +114,11 @@ export default function Roles() {
 
                         <div className="pt-4">
 
-                            <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+                            <div className="shadow-xl border-2 bg-white dark:bg-gray-700 px-1 py-1 rounded-xl">
+                                <div className="relative overflow-x-auto shadow-md rounded-lg">
                                 <div className="" style={{ overflow: 'auto', maxHeight: '30rem' }}>
                                     <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                                        <thead className="text-xs text-gray-700 uppercase bg-gray-200 dark:bg-gray-700 dark:text-gray-400">
+                                        <thead className="text-xs text-white uppercase bg-gray-900 dark:bg-gray-700 dark:text-gray-400">
                                             <tr>
                                                 <th scope="col" className="px-6 py-3" style={{ width: '5%' }}>Id</th>
                                                 <th scope="col" className="px-6 py-3" style={{ width: '8%' }}>Nombre</th>
@@ -148,6 +149,7 @@ export default function Roles() {
                                             ))}
                                         </tbody>
                                     </table>
+                                </div>
                                 </div>
                             </div>
 

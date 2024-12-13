@@ -135,7 +135,6 @@ export function SetRemoveClassById(id, add, remove) {
     }
 }
 
-
 export function ValidateFormByClass(className = "") {
 
     let isValid = true;
@@ -188,13 +187,12 @@ export function ValidatePassword(clave) {
     }
 
     // // Verificar si contiene al menos un símbolo
-    // if (!/[!@#$%^&*(),.?":{}|<>]/.test(clave)) {
-    //     mensajes.push("La clave debe contener al menos un símbolo.");
-    // }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(clave)) {
+         mensajes.push('La clave debe contener al menos un símbolo de los siguientes: !@#$%^&*(),.?":{}|<></>.');
+    }
 
     return mensajes.length > 0 ? mensajes : [];
 }
-
 
 export function ValidatePasswordMatch(clave, confirmacion) {
     if (clave === confirmacion) {
@@ -275,3 +273,28 @@ export function FormatCurrency(value){
   return `${parts[0]}.${parts[1]}`; // Une el entero con los decimales
 };  
   
+export function ValidateIsWebUrl(value) {
+    const urlPattern = new RegExp(
+        '^(https?:\\/\\/)?' + // Protocolo opcional (http o https)
+        '([\\da-z.-]+)\\.([a-z.]{2,6})' + // Dominio
+        '(\\:[0-9]{1,5})?' + // Puerto opcional
+        '(\\/[-a-zA-Z0-9@:%_+.~#?&/=]*)?$', // Ruta opcional
+        'i' // Ignorar mayúsculas y minúsculas
+    );
+    return urlPattern.test(value.trim()); // Valida y elimina espacios adicionales
+};
+
+export function ValidateIsName(name) {
+  const namePattern = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/; // Solo letras, acentos, ñ y espacios
+  const trimmedName = name.trim(); // Elimina espacios al inicio y al final
+  const isValidFormat = namePattern.test(trimmedName); // Verifica el formato
+
+  return isValidFormat
+}
+
+export function ValidateNumbers(value) {
+  const numberPattern = /^[0-9]+(\.[0-9]+)?$/; // Acepta números enteros y decimales
+  return numberPattern.test(value.trim()); // Valida después de eliminar espacios
+}
+
+

@@ -82,8 +82,8 @@ const colorClasses = {
         dark: 'dark:bg-violet-500',
     },
     emerald: {
-        base: 'bg-emerald-500',
-        hover: 'hover:bg-emerald-700 dark:hover:bg-emerald-600',
+        base: 'bg-emerald-700',
+        hover: 'hover:bg-emerald-500 dark:hover:bg-emerald-600',
         dark: 'dark:bg-emerald-500',
     },
     slate: {

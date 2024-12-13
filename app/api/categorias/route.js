@@ -1,30 +1,81 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-
-const db = new PrismaClient();
+const prisma = new PrismaClient();
 
 export async function GET() {
   try {
-    const categorias = await db.categoriasProducto.findMany();
-    return NextResponse.json(categorias);
+    const listaCategorias = await prisma.categoriasProducto.findMany({
+      select: {
+        CategoriaProductoID:true,
+        NombreCategoria:true,
+        Descripcion:true,
+        Eliminado:true,
+        FechaCreacion:true
+      }
+    });
+
+    if (listaCategorias.length == 0) {
+      return NextResponse.json({
+        code: 204,
+        status: "failed",
+        message: "No se encontraron registros.",
+      });
+    }
+
+    return NextResponse.json({
+      code: 200,
+      status: "success",
+      data: listaCategorias,
+      message: "",
+    });
   } catch (error) {
-    console.error('Error al obtener las categorías:', error);
-    return NextResponse.json({ error: 'Error al obtener las categorías' }, { status: 500 });
+    console.error("Error al obtener los datos:", error);
+    return NextResponse.json(
+      {
+        code: 500,
+        status: "error",
+        message: "Error al obtener los datos: " + error.message,
+      },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request) {
-  const data = await request.json();
   try {
-    const nuevaCategoria = await db.categoriasProducto.create({
+    const model = await request.json();
+
+    const nuevaCategoria = await prisma.categoriasProducto.create({
       data: {
-        NombreCategoria: data.nombreCategoria,
-        Descripcion: data.descripcion,
+        NombreCategoria: model.nombre,
+        Descripcion: model.descripcion,
+        IdUsuarioCreacion: model.idUsuarioCreacion
       },
     });
-    return NextResponse.json(nuevaCategoria);
-  } catch (error) {
-    console.error('Error al crear la categoría:', error);
-    return NextResponse.json({ error: 'Error al crear la categoría' }, { status: 500 });
+
+    // Verificar si se creó
+    if (!nuevaCategoria) {
+      return NextResponse.json({
+        code: 400,
+        status: "error",
+        message: "Error al registrar la categoría",
+      });
+    }
+
+    return NextResponse.json({
+      code: 200,
+      status: "success",
+      data: true,
+      message: "Categoría registrada satisfactoriamente",
+    });
+  } 
+  catch (error) {
+    console.error("Error al registrar la categoría:", error);
+    
+    return NextResponse.json({
+      code: 500,
+      status: "error",
+      message: "Error al registrar la categoría: " + error.message,
+    });
   }
 }

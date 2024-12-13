@@ -1,5 +1,5 @@
 import { FormatOnlyDate, RemoveValidationClasses, ValidateFormByClass } from "@/app/api/utils/js-helpers";
-import { Ban, Calendar, Plus, PlusIcon, Printer, X } from "lucide-react";
+import { Ban, Calendar, Coins, Plus, PlusIcon, Printer, X } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useReactToPrint } from "react-to-print";
 import { Toaster, toast } from "sonner";
@@ -12,6 +12,8 @@ import TicketMovimiento from "./printTicket";
 import HtmlNewLabel from "../HtmlHelpers/Label1";
 import { ClipLoader } from "react-spinners";
 import { useSession } from "next-auth/react";
+import XButton from "../HtmlHelpers/XButton";
+import ModalTemplate from "../HtmlHelpers/ModalTemplate";
 
 export default function ListaMovimientos({ open, onClose, cajaActual, idInfoCaja, }) {
   const options = [
@@ -22,7 +24,9 @@ export default function ListaMovimientos({ open, onClose, cajaActual, idInfoCaja
   const [onLoading, onSet_onLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const ticketRef = useRef();
-  const [printReady, setPrintReady] = useState(false);
+  const classResponsiveDivs = "sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-3 xl:grid-cols-3";
+  const classesButtons = "sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2"
+  const [onLoadingBtn, onSet_onLoadingBtn] = useState(false);
 
   //#region [Paginación]
   const [registrosPorPagina] = useState(3);
@@ -40,8 +44,6 @@ export default function ListaMovimientos({ open, onClose, cajaActual, idInfoCaja
   //Sesion
   const { data: session } = useSession();
 
-
-
   // Estado del formulario
   const [formData, setFormData] = useState({
     monto: "",
@@ -55,11 +57,6 @@ export default function ListaMovimientos({ open, onClose, cajaActual, idInfoCaja
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  useEffect(() => {
-    if (selectedItem) {
-      setPrintReady(true);
-    }
-  }, [selectedItem]);
 
   const handlePrintClick = (item) => {
     setSelectedItem(item);
@@ -110,9 +107,9 @@ export default function ListaMovimientos({ open, onClose, cajaActual, idInfoCaja
 
   useEffect(() => {
     if (open) {
-      onGet_ListaMovimientos();
+      onInit()
     }
-  }, [open, onGet_ListaMovimientos]);
+  }, [open]);
 
   async function onPost_Movimiento() {
     let isValid = ValidateFormByClass("fc-movimientos")
@@ -128,6 +125,8 @@ export default function ListaMovimientos({ open, onClose, cajaActual, idInfoCaja
         idUsuarioCreacion: Number(session?.user.id)
       };
       
+      onSet_onLoadingBtn(true);
+
       try {
         const response = await fetch("/api/caja/movimientos", {
           method: "POST",
@@ -138,19 +137,18 @@ export default function ListaMovimientos({ open, onClose, cajaActual, idInfoCaja
         const result = await response.json();
 
         if (result.status == "success") {
+          onInit();
           toast.success("Movimiento agregado correctamente");
-          onGet_ListaMovimientos();
-          RemoveValidationClasses("fc-movimientos")
-          setFormData({
-            monto: "",
-            motivo: ""
-          });
+          
         } else {
           toast.error(result.message);
         }
       } catch (error) {
         toast.error("Sucedió un error registrar el movimiento: " + error);
         console.error("Sucedió un error registrar el movimiento",error);
+      }
+      finally{
+        onSet_onLoadingBtn(false);
       }
     }
   }
@@ -171,7 +169,7 @@ export default function ListaMovimientos({ open, onClose, cajaActual, idInfoCaja
 
       if (result.status == "success") {
         toast.success(result.message);
-        onGet_ListaMovimientos();
+        onInit();
       } 
       else {
         toast.error(result.message);
@@ -182,196 +180,175 @@ export default function ListaMovimientos({ open, onClose, cajaActual, idInfoCaja
     }
   }
 
-  return (
-    <div
-      onClick={handleClose}
-      className={`fixed inset-0 flex justify-center items-center transition-opacity ${open ? "visible bg-black bg-opacity-40 dark:bg-opacity-50" : "invisible"
-        }`}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className={`bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 transition-all ${open ? "scale-100 opacity-100" : "scale-90 opacity-0"
-          } max-w-3xl w-full md:w-2/3 lg:w-6/12`}
-      >
-        <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 p-2 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-        >
-          <X size={20} strokeWidth={2} />
-        </button>
-        <div className="flex flex-col items-center">
-          <div className="text-center w-full">
-            <h2 className="text-xl font-bold flex gap-3 justify-center items-center text-gray-900 dark:text-gray-100">
-              <PlusIcon /> Movimientos de Dinero
-            </h2>
-            <hr className="my-3 py-0.5 border-black dark:border-white" />
+  const onInit = () =>{
+    RemoveValidationClasses("fc-movimientos")
+    setFormData({
+      monto: "",
+      motivo: "",
+      idTipoMovimiento: ""
+    });
+    onGet_ListaMovimientos();
+  }
+
+  //Contenido del Modal
+  const modalChildren = (
+  <div style={{ maxHeight: "55vh", overflowY: "auto", overflowX: "hidden" }}>
+    {cajaActual && (
+      <div className="flex flex-col items-center">
+        <form className="my-2 flex flex-col items-center">
+          <div className={`pl-4 grid ${classResponsiveDivs} gap-4 mx-auto w-full`}>
+            <HtmlFormSelect legend={"Movimiento"} value={formData.idTipoMovimiento} additionalClass={"fc-movimientos"} onChange={handleChange} options={options} name={"idTipoMovimiento"} />
+            <HtmlFormInput legend={"Monto"} type={"number"} value={formData.monto} additionalClass={"fc-movimientos"} onChange={handleChange} name={"monto"} />
+            <HtmlFormInput legend={"Comentario"} value={formData.motivo} additionalClass={"fc-movimientos"} onChange={handleChange} name={"motivo"} />
+
+
           </div>
-          {cajaActual && (
-            <div className="flex flex-col items-center">
-              <form className="my-2 w-full flex flex-col items-center">
-                <div className="pl-4 grid grid-cols-1 md:grid-cols-12 gap-4 mx-auto w-full">
-                  <div className="md:col-span-4">
-                    <HtmlFormSelect legend={"Tipo de Movimiento"} value={formData.idTipoMovimiento} additionalClass={"fc-movimientos"} onChange={handleChange} options={options} name={"idTipoMovimiento"} />
-                  </div>
-                  <div className="md:col-span-4">
-                    <HtmlFormInput legend={"Monto"} type={"number"} value={formData.monto} additionalClass={"fc-movimientos"} onChange={handleChange} name={"monto"} />
-                  </div>
-                  <div className="md:col-span-4">
-                    <HtmlFormInput legend={"Comentario"} value={formData.motivo} additionalClass={"fc-movimientos"} onChange={handleChange} name={"motivo"} />
-                  </div>
-                </div>
-                <div className="mt-6 pl-4 grid grid-cols-1 md:grid-cols-12 gap-4 mx-auto w-full">
-                  <div className="md:col-span-3">
-                    <HtmlButton color={"green"} onClick={onPost_Movimiento} icon={Plus} legend={"Registrar"} />
-                  </div>
-                  <div className="md:col-span-3">
-                    <HtmlButton onClick={handleClose} color={"red"} icon={X} legend={"Cerrar"} />
-                  </div>
-                </div>
-              </form>
-            </div>
-          )}
-          {listaMovimientos.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-1 mt-8 mx-auto w-full">
-              {onLoading ? (
+          {
+              onLoadingBtn ? (
                 <div className="flex items-center justify-center mt-20">
                   <ClipLoader size={30} speedMultiplier={1.5} />
                 </div>
               ) : (
-                <div className="pt-1">
-                  <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-                    <div className="overflow-auto max-h-72">
-                        <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400" style={{ tableLayout: "auto" }}>
-                          <thead className="text-sm text-gray-700 uppercase bg-gray-300 dark:bg-gray-700 dark:text-gray-400">
-                            <tr>
-                              <th scope="col" className="px-6 py-2" style={{ minWidth: "50px", maxWidth: "70px" }}>
-                                No.
-                              </th>
-                              <th scope="col" className="px-6 py-2" style={{ minWidth: "70px", maxWidth: "70px" }}>
-                                Fecha
-                              </th>
-                              <th scope="col" className="px-6 py-2" style={{ minWidth: "80px", maxWidth: "100px" }}>
-                                Tipo Mov.
-                              </th>
-                              <th scope="col" className="px-6 py-2" style={{ minWidth: "80px", maxWidth: "120px" }}>
-                                Estado
-                              </th>
-                              <th scope="col" className="px-6 py-2" style={{ minWidth: "100px", maxWidth: "150px" }}>
-                                Monto
-                              </th>
-                              <th scope="col" className="px-6 py-2" style={{ minWidth: "110px", maxWidth: "160px" }}>
-                                Acciones
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {currentMovimientos.map(
-                              (item, index) =>
-                                item !== null && (
-                                  <tr key={index} className="bg-white dark:bg-gray-800">
-                                    <td className="px-6 py-1" style={{ width: "5%" }}>
-                                      {item.idMovimiento}
-                                    </td>
-                                    <td className="px-1 py-1" style={{ width: "5%" }}>
-                                      <HtmlNewLabel textSize="xs" icon={Calendar} color={"blue"} legend={FormatOnlyDate(item.fechaCreacion)} />
-                                    </td>
-                                    <td className="px-6 py-1 text-black" style={{ width: "10%" }}>
-                                      {item.TipoMovimiento.nombre}
-                                    </td>
-                                    <td className="px-6 py-1 text-black" style={{ width: "10%" }}>
-                                      {item.idEstadoMovimiento === 1 ? (
-                                        "Pendiente"
-                                      ) : item.idEstadoMovimiento === 2 ? (
-                                        null
-                                      ) : item.idEstadoMovimiento === 3 ? (
-                                        "Nulo"
-                                      ) : null}
-                                    </td>
-                                    <td className="px-6 py-1 text-black" style={{ width: "10%" }}>
-                                      ₡ {item.monto}
-                                    </td>
-                                    <td className="px-6 py-1" style={{ width: "10%", display: "flex", justifyContent: "space-around" }}>
-                                      <HtmlTableButton tooltip={"Imprimir recibo movimiento"} size={12} padding={2} color={"teal"} icon={Printer} onClick={() => { setSelectedItem(item); handlePrintClick(item); }} />
-
-                                      {item.idEstadoMovimiento === 1 && cajaActual && (
-                                        <HtmlTableButton tooltip={"Anular Movimiento"} size={12} padding={2} color={"red"} icon={Ban} onClick={() => onUpdate_Movimiento(item.idMovimiento)} />
-                                      )}
-                                    </td>
-                                  </tr>
-                                )
-                            )}
-                          </tbody>
-                        </table>
-
-
-                    </div>
-                  </div>
-                  <nav className="flex items-center justify-between pt-4" aria-label="Table navigation">
-                    <ul className="inline-flex -space-x-px text-sm h-8">
-                      <li>
-                        <button
-                          onClick={() => paginate(paginaActual - 1)}
-                          disabled={paginaActual === 1}
-                          className={`flex items-center justify-center px-3 h-8 ${paginaActual === 1
-                            ? "cursor-not-allowed opacity-50"
-                            : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                            }`}
-                        >
-                          Anterior
-                        </button>
-                      </li>
-                      {[
-                        ...Array(
-                          Math.ceil(
-                            listaMovimientos.length / registrosPorPagina
-                          )
-                        ).keys(),
-                      ].map((number) => (
-                        <li key={number + 1}>
-                          <button
-                            onClick={() => paginate(number + 1)}
-                            className={`flex items-center justify-center px-3 h-8 ${paginaActual === number + 1
-                              ? "bg-gray-300 dark:bg-gray-600"
-                              : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                              }`}
-                          >
-                            {number + 1}
-                          </button>
-                        </li>
-                      ))}
-                      <li>
-                        <button
-                          onClick={() => paginate(paginaActual + 1)}
-                          disabled={
-                            paginaActual ===
-                            Math.ceil(
-                              listaMovimientos.length / registrosPorPagina
-                            )
-                          }
-                          className={`flex items-center justify-center px-3 h-8 ${paginaActual ===
-                            Math.ceil(
-                              listaMovimientos.length / registrosPorPagina
-                            )
-                            ? "cursor-not-allowed opacity-50"
-                            : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                            }`}
-                        >
-                          Siguiente
-                        </button>
-                      </li>
-                    </ul>
-                  </nav>
-                </div>
-              )}
-            </div>
-          )}
+                <div className = {`mt-6 pl-4 grid ${classesButtons} gap-1 justify-start items-start`}>
+            <HtmlButton color="green" onClick={onPost_Movimiento} icon={Plus} legend="Registrar" />
+            <HtmlButton onClick={handleClose} color="red" icon={X} legend="Cerrar" />
         </div>
-        {selectedItem && (
-          <div style={{ display: "none" }}>
-            <TicketMovimiento ref={ticketRef} item={selectedItem} />
+
+              )
+          }
+            
+
+        </form>
+      </div>
+    )}
+    {listaMovimientos.length > 0 && (
+      <div className={`grid grid-cols-1 mt-4 mx-auto`}>
+        {onLoading ? (
+          <div className="flex items-center justify-center mt-20">
+            <ClipLoader size={30} speedMultiplier={1.5} />
+          </div>
+        ) : (
+          <div className="pt-1">
+            <div className="relative overflow-x-auto shadow-xl rounded-lg">
+              <div className="overflow-auto max-h-72">
+                    <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400" style={{ tableLayout: "auto" }}>
+                      <thead className="text-sm text-gray-700 uppercase bg-gray-300 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                          <th className="px-6 py-2" style={{ minWidth: "50px", maxWidth: "70px" }}>No.</th>
+                          <th className="px-2 py-2" style={{ minWidth: "70px", maxWidth: "70px" }}>Fecha</th>
+                          <th className="px-6 py-2" style={{ minWidth: "80px", maxWidth: "100px" }}>Tipo Mov.</th>
+                          <th className="px-6 py-2" style={{ minWidth: "100px", maxWidth: "150px" }}>Monto</th>
+                          <th className="px-6 py-2" style={{ minWidth: "110px", maxWidth: "160px" }}>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentMovimientos.map((item, index) =>
+                          item && (
+                            <tr key={index} className="bg-white dark:bg-gray-800">
+                              <td className="px-6 py-2" style={{ width: "5%", color: item.idEstadoMovimiento === 3 ? "red" : "black" }}>
+                                {item.idMovimiento}
+                              </td>
+                              <td className="px-1 py-2" style={{ width: "5%" }}>
+                                <HtmlNewLabel textSize="xs" icon={Calendar} color={item.idEstadoMovimiento === 3 ? "red" : "blue"} legend={FormatOnlyDate(item.fechaCreacion)} />
+                              </td>
+                              <td className="px-6 py-2" style={{ width: "10%", color: item.idEstadoMovimiento === 3 ? "red" : "black" }}>
+                                {item.TipoMovimiento.nombre}
+                              </td>
+                              <td className="px-6 py-2" style={{ width: "10%", color: item.idEstadoMovimiento === 3 ? "red" : "black" }}>
+                                ₡ {item.monto}
+                              </td>
+                              <td className="px-6 py-2" style={{ width: "10%", display: "flex", justifyContent: "space-around" }}>
+                                {cajaActual && (
+                                  item.idEstadoMovimiento === 3 ? (
+                                    <HtmlNewLabel textSize="xs" icon={Ban} color="red" legend="NULO" />
+                                  ) : (
+                                    <>
+                                      <HtmlTableButton tooltip="Imprimir recibo movimiento" size={12} padding={2} color="teal" icon={Printer} onClick={() => { setSelectedItem(item); handlePrintClick(item); }} />
+                                      <HtmlTableButton tooltip="Anular Movimiento" size={12} padding={2} color="red" icon={Ban} onClick={() => onUpdate_Movimiento(item.idMovimiento)} />
+                                    </>
+                                  )
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        )}
+                      </tbody>
+                    </table>
+
+
+
+              </div>
+            </div>
+            <nav className="flex items-center justify-between pt-4" aria-label="Table navigation">
+              <ul className="inline-flex -space-x-px text-sm h-8">
+                <li>
+                  <button
+                    onClick={() => paginate(paginaActual - 1)}
+                    disabled={paginaActual === 1}
+                    className={`flex items-center justify-center px-3 h-8 ${paginaActual === 1
+                      ? "cursor-not-allowed opacity-50"
+                      : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                      }`}
+                  >
+                    Anterior
+                  </button>
+                </li>
+                {[
+                  ...Array(
+                    Math.ceil(
+                      listaMovimientos.length / registrosPorPagina
+                    )
+                  ).keys(),
+                ].map((number) => (
+                  <li key={number + 1}>
+                    <button
+                      onClick={() => paginate(number + 1)}
+                      className={`flex items-center justify-center px-3 h-8 ${paginaActual === number + 1
+                        ? "bg-gray-300 dark:bg-gray-600"
+                        : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                    >
+                      {number + 1}
+                    </button>
+                  </li>
+                ))}
+                <li>
+                  <button
+                    onClick={() => paginate(paginaActual + 1)}
+                    disabled={
+                      paginaActual ===
+                      Math.ceil(
+                        listaMovimientos.length / registrosPorPagina
+                      )
+                    }
+                    className={`flex items-center justify-center px-3 h-8 ${paginaActual ===
+                      Math.ceil(
+                        listaMovimientos.length / registrosPorPagina
+                      )
+                      ? "cursor-not-allowed opacity-50"
+                      : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                      }`}
+                  >
+                    Siguiente
+                  </button>
+                </li>
+              </ul>
+            </nav>
           </div>
         )}
       </div>
-    </div>
+    )}
+    {selectedItem && (
+      <div style={{ display: "none" }}>
+        <TicketMovimiento ref={ticketRef} item={selectedItem} />
+      </div>
+    )}
+  </div>
+  )
+
+  return (
+    <>
+      <ModalTemplate open={open} handleClose={handleClose} onClose={onClose} title={"Movimientos de Dinero"} icon={Coins} children={modalChildren} />
+    </>
   );
 }

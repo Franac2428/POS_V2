@@ -1,92 +1,104 @@
 'use client';
 
-import Agregar from "@/app/components/proveedor/crear";
-import { CirclePlus, FileUp, Pencil, SlidersHorizontal, Trash, Eye, PhoneCall, AtSign, Tag, User, PanelsTopLeft } from "lucide-react";
-import { useState, useEffect } from "react";
-import * as XLSX from 'xlsx';
-import HtmlTableButton from "@/app/components/HtmlHelpers/TableButton";
+import { FormatDate } from "@/app/api/utils/js-helpers";
+import HtmlButton from "@/app/components/HtmlHelpers/Button";
 import HtmlNewLabel from "@/app/components/HtmlHelpers/Label1";
-import Eliminar from "../../components/proveedor/eliminar";
-import Buscador from "../../components/buscador/buscar";
-import Editar from "@/app/components/proveedor/editar";
-import Ver from "@/app/components/proveedor/ver";
-import { useCallback } from "react";
-import useSWR from 'swr';
+import PageContent from "@/app/components/HtmlHelpers/PageContent";
+import TablePagination from "@/app/components/HtmlHelpers/Pagination";
+import HtmlTableButton from "@/app/components/HtmlHelpers/TableButton";
+import AgregarProveedor from "@/app/components/proveedor/agregarProveedor";
+import EditarProveedor from "@/app/components/proveedor/editarProveedor";
+import EliminarProveedor from "@/app/components/proveedor/eliminarProveedor";
+import { AtSign, Calendar, Contact, Earth, FileSpreadsheet, Notebook, Pencil, Phone, Tag, Text, Trash, User, UserPlus } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { ClipLoader } from "react-spinners";
+import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 
-const fetcher = (url) => fetch(url).then((res) => res.json());
 
+const itemsBreadCrumb = ["Dashboard", "Proveedores"];
 export default function Proveedores() {
-    const [paginaActual, onSet_PaginaActual] = useState(1);
-    const [registrosPorPagina] = useState(5); // Cantidad de registros por página
-    const [selectedProveedorId, setSelectedProveedorId] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filteredData, setFilteredData] = useState([]);
-    const [open, setOpen] = useState(false);
-    const [agregar, setAgregar] = useState(false);
-    const [ver, setVer] = useState(false);
-    const [editar, setEditar] = useState(false);
+    const [onLoading, onSet_onLoading] = useState(true);
+    const [listaProveedores, onSet_ListaProveedores] = useState([]);
+    const fetchCalled = useRef(false);
+    const [modalAgregar, onModal_Agregar] = useState(false);
+    const [modalEditar, onModal_Editar] = useState(false);
+    const [modalEliminar, onModal_Eliminar] = useState(false);
+    const [idProveedor, onSet_IdProveedor] = useState(0);
+    const [item, onSet_ItemProveedor] = useState(null);
+    const [paginaActual, setPaginaActual] = useState(1);
+    const [registrosPorPagina] = useState(5);
+    const classDivsButtons = "sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4";
 
-    const { data, error, mutate } = useSWR(`/api/proveedor`, fetcher);
+    const indexOfLastProveedor = paginaActual * registrosPorPagina;
+    const indexOfFirstProveedor = indexOfLastProveedor - registrosPorPagina;
+    const currentProveedores = listaProveedores.filter(proveedor => !proveedor.Eliminado).slice(indexOfFirstProveedor, indexOfLastProveedor);
 
-    //Paginación
-    const indexOfLastClient = paginaActual * registrosPorPagina;
-    const indexOfFirstClient = indexOfLastClient - registrosPorPagina;
-    const currentClientes = filteredData.slice(indexOfFirstClient, indexOfLastClient);
-    const paginate = (pageNumber) => onSet_PaginaActual(pageNumber);
+
+    //Obtener las proveedores
+    const onGet_ListaProveedores = useCallback(async () => {
+        onSet_onLoading(true);
+        try {
+            const response = await fetch(`/api/proveedor`);
+            const result = await response.json();
+            if (result.status === "success") {
+                onSet_ListaProveedores(result.data)
+                toast.success('Se han obtenido los registros');
+            }
+            else if (result.code === 204) {
+                toast.warning('No se encontraron registros');
+                onSet_ListaProveedores([])
+            }
+            else {
+                console.log(result.message);
+                toast.error('Error al obtener los registros');
+                onSet_ListaProveedores([])
+            }
+        }
+        catch (error) {
+            console.error('Error al obtener la lista de proveedores:', error);
+            toast.error('Sucedió un error al obtener la lista de proveedores');
+        }
+        finally {
+            onSet_onLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
-        if (data) {
-            setFilteredData(data);
+        if (!fetchCalled.current) {
+            fetchCalled.current = true;
+            onGet_ListaProveedores()
         }
-    }, [data]);
-
-    const handleSearch = (term) => {
-        setSearchTerm(term);
-        if (term) {
-            const lowerCaseTerm = term.toLowerCase();
-            setFilteredData(data.filter(proveedor =>
-                proveedor.Nombre.toLowerCase().includes(lowerCaseTerm) ||
-                proveedor.ProveedorID.toString().includes(lowerCaseTerm)
-            ));
-        } else {
-            setFilteredData(data);
-        }
-        onSet_PaginaActual(1); // Resetear a la primera página cuando se busca
-    };
-
-    if (error) return <div>Error al cargar los datos</div>;
-    if (!data) return <div>Cargando...</div>;
-    if (!data || !Array.isArray(data)) return <div>No hay datos disponibles</div>;
-
-    const eliminarProveedor = async (proveedorId) => {
-        await fetch(`/api/proveedor/${proveedorId}`, {
-            method: 'DELETE',
-        });
-        mutate(data.filter(proveedor => proveedor.ProveedorID !== proveedorId), false);
-        setOpen(false);
-    };
+    }, [onGet_ListaProveedores]);
 
     const handleExport = () => {
-        if (filteredData.length > 0) {
-            generateExcelReport(filteredData);
-        } else {
-            alert("No hay datos para exportar.");
+        if (listaProveedores.length == 0) {
+            toast.warning("No hay datos para exportar");
+        }
+
+        if (typeof document !== 'undefined') {
+            generateExcelReport(listaProveedores);
         }
     };
 
     const generateExcelReport = (data) => {
-        const formattedData = data.map(proveedor => ({
-            "ID Proveedor": proveedor.ProveedorID,
-            "Nombre": proveedor.Nombre,
-            "Teléfono": proveedor.Telefono,
-            "Correo Electrónico": proveedor.Email,
-            "Sitio Web": proveedor.SitioWeb
-        }));
+        // Formatear los datos
+        const formattedData = data.map(p => {
+            return {
+                "No. Proveedor": p.ProveedorID,
+                "Nombre": p.Nombre,
+                "Nombre del Contacto": p.Contacto,
+                "Medios de Contacto": p.Telefono + " / " + p.Email,
+                "Sitio Web": p.SitioWeb ? p.SitioWeb : "--Sin sitio web--",
+                "Estado": p.Eliminado ? 'Eliminado' : 'Activo',
+                "Fecha de Creación": FormatDate(p.FechaCreacion),
+            };
+        });
 
         // Crear hoja de Excel
         const worksheet = XLSX.utils.json_to_sheet(formattedData);
 
-        // Estilo de los encabezados
+        // Estilo para el encabezado
         const headerStyle = {
             font: { bold: true, color: { rgb: "FFFFFF" } },
             fill: { fgColor: { rgb: "4F81BD" } },
@@ -99,7 +111,7 @@ export default function Proveedores() {
             }
         };
 
-        // Aplicar estilos al encabezado
+        // Aplicar estilo a los encabezados
         const range = XLSX.utils.decode_range(worksheet['!ref']);
         for (let C = range.s.c; C <= range.e.c; C++) {
             const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
@@ -121,102 +133,97 @@ export default function Proveedores() {
             }
         }
 
-        // Ajustar anchos de columna
+        // Configurar anchos de columna
         const columnWidths = [
-            { wch: 15 }, // ID Proveedor
+            { wch: 15 }, // No. Proveedor
             { wch: 30 }, // Nombre
-            { wch: 15 }, // Teléfono
-            { wch: 30 }, // Correo Electrónico
-            { wch: 40 }  // Sitio Web
+            { wch: 30 }, // Nombre del Contacto
+            { wch: 35 }, // Medios de Contacto
+            { wch: 30 }, // Sitio Web
+            { wch: 15 }, // Estado
+            { wch: 20 }  // Fecha de Creación
         ];
         worksheet['!cols'] = columnWidths;
 
-        // Crear libro de Excel
+        // Crear libro de Excel y hoja
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Proveedores");
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Listado Proveedores");
 
         // Generar archivo Excel
         const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
         const dataBlob = new Blob([excelBuffer], { type: "application/octet-stream" });
         const downloadLink = document.createElement("a");
         downloadLink.href = URL.createObjectURL(dataBlob);
-        downloadLink.download = "Proveedores.xlsx";
+        downloadLink.download = "ListadoProveedores.xlsx";
         downloadLink.click();
     };
 
-    return (
+
+    const pageContent = (
         <>
-            <div className="w-full">
-                <div className="grid grid-cols-10 gap-4 max-w-7xl mx-auto py-4">
-                    <h1 className="font-semibold col-span-10 text-3xl text-gray-900 dark:text-gray-100">Proveedores</h1>
-                    <div className="col-span-3">
-                        <Buscador onSearch={handleSearch} />
+            {onLoading ? (
+                <ClipLoader size={30} speedMultiplier={1.5} />
+            ) : (
+                <>
+                    <div className={`grid ${classDivsButtons} gap-4 mx-auto`}>
+                        <HtmlButton colSize={1} color={"blue"} icon={UserPlus} onClick={() => onModal_Agregar(true)} legend="Nuevo Proveedor" />
+                        <HtmlButton colSize={1} color={"green"} icon={FileSpreadsheet} onClick={() => handleExport()} legend="Exportar Datos" />
                     </div>
-                    <div className="col-start-8 col-span-3">
-                        <div className="flex justify-end gap-6">
-                            <button className="flex items-center gap-3 shadow-lg active:scale-95 transition-transform ease-in-out duration-75 hover:scale-105 transform text-white font-semibold bg-green-500 dark:bg-green-600 px-4 py-2 rounded-lg" onClick={() => setAgregar(true)}>
-                                <CirclePlus className="text-white" />
-                                Agregar
-                            </button>
-                            <button onClick={handleExport} className="flex gap-3 shadow-lg text-green-500 dark:text-green-400 font-semibold bg-white dark:bg-gray-700 px-4 py-2 active:scale-95 transition-transform ease-in-out duration-75 hover:scale-105 transform border border-green-500 dark:border-green-400 rounded-lg">
-                                <FileUp className="text-green-500 dark:text-green-400" />
-                                Exportar
-                            </button>
-                        </div>
-                    </div>
-                    <div className="shadow-lg col-span-10 bg-white dark:bg-gray-700 px-5 py-4 rounded-lg">
-                        {/* Tabla */}
-                        <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-                            <div style={{ overflow: 'auto', maxHeight: '30rem' }}>
+                    <br />
+                    <div className="shadow-xl border-2 bg-white dark:bg-gray-700 px-1 py-1 rounded-xl">
+                        <div className="relative overflow-x-auto shadow-md rounded-lg">
+                            <div className="" style={{ overflow: 'auto', maxHeight: '30rem' }}>
                                 <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                                    <thead className="text-xs text-gray-700 uppercase bg-gray-200 dark:bg-gray-700 dark:text-gray-400">
-                                        <tr>
-                                            <th className="px-6 py-3 text-center" style={{ width: '10%' }}>ID</th>
-                                            <th className="px-6 py-3 text-center" style={{ width: '17%' }}>Nombre</th>
-                                            <th className="px-6 py-3 text-center" style={{ width: '10%' }}>Teléfono</th>
-                                            <th className="px-6 py-3 text-center" style={{ width: '20%' }}>Correo Electrónico</th>
-                                            <th className="px-6 py-3 text-center" style={{ width: '20%' }}>Sitio Web</th>
-                                            <th className="px-6 py-3 text-center" style={{ width: '15%' }}>Acciones</th>
+                                    <thead>
+                                        <tr className="text-sm text-white uppercase bg-gray-900 dark:bg-gray-700 dark:text-gray-400">
+                                            <th className="px-6 py-3 text-center">No.</th>
+                                            <th className="px-6 py-3 text-center">Nombre / Contacto</th>
+                                            <th className="px-6 py-3 text-center">Medios Contacto</th>
+                                            <th className="px-6 py-3 text-center">Creado</th>
+                                            <th className="px-6 py-3 text-center">Acciones</th>
                                         </tr>
                                     </thead>
+
                                     <tbody>
-                                        {currentClientes.map((proveedor, index) => (
+                                        {currentProveedores.map((proveedor, index) => (
                                             proveedor !== null && (
                                                 <tr key={index} className="bg-white dark:bg-gray-800">
                                                     <td className="px-6 py-4 text-center text-gray-900 dark:text-gray-300">
-                                                        <HtmlNewLabel color={"blue"} icon={Tag} legend={`ID: ${proveedor.ProveedorID}`} />
+                                                        #{proveedor.ProveedorID}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-left text-gray-900 dark:text-gray-300">
+                                                        <div className="mb-2"><HtmlNewLabel color={"green"} icon={User} legend={proveedor.Nombre} /></div>
+                                                        <div className="mb-2"><HtmlNewLabel color={"cyan"} icon={Contact} legend={proveedor.Contacto} /></div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-left text-gray-900 dark:text-gray-300">
+                                                        <div className="mb-2">
+                                                            <HtmlNewLabel color="blue" icon={AtSign} legend={proveedor.Email} />
+                                                        </div>
+                                                        <div className="mb-2">
+                                                            <HtmlNewLabel color="indigo" icon={Phone} legend={proveedor.Telefono} />
+                                                        </div>
+
                                                     </td>
                                                     <td className="px-6 py-4 text-center text-gray-900 dark:text-gray-300">
-                                                        <HtmlNewLabel color={"indigo"} icon={User} legend={`Nombre: ${proveedor.Nombre}`} />
+                                                        <HtmlNewLabel color={"amber"} icon={Calendar} legend={FormatDate(proveedor.FechaCreacion)} />
                                                     </td>
                                                     <td className="px-6 py-4 text-center text-gray-900 dark:text-gray-300">
-                                                        <HtmlNewLabel color={"blue"} icon={PhoneCall} legend={proveedor.Telefono} />
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center text-gray-900 dark:text-gray-300">
-                                                        <HtmlNewLabel color={"violet"} icon={AtSign} legend={proveedor.Email} />
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center text-gray-900 dark:text-gray-300">
-                                                        <HtmlNewLabel color={"violet"} icon={PanelsTopLeft} legend={proveedor.SitioWeb} />
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center text-gray-900 dark:text-gray-300">
-                                                        <div className="flex gap-2 justify-evenly items-center">
+                                                        <div className="flex gap-1 justify-center items-center">
                                                             <HtmlTableButton
                                                                 color={"blue"}
                                                                 tooltip={"Editar Proveedor"}
                                                                 icon={Pencil}
-                                                                onClick={() => {
-                                                                    setSelectedProveedorId(proveedor.ProveedorID);
-                                                                    setEditar(true);
-                                                                }}
+                                                                onClick={() => { onSet_IdProveedor(proveedor.ProveedorID), onModal_Editar(true) }}
+
+
                                                             />
                                                             <HtmlTableButton
                                                                 color={"red"}
                                                                 tooltip={"Eliminar Proveedor"}
                                                                 icon={Trash}
-                                                                onClick={() => {
-                                                                    setSelectedProveedorId(proveedor.ProveedorID);
-                                                                    setOpen(true);
-                                                                }}
+                                                                onClick={() => { onSet_ItemProveedor(proveedor), onModal_Eliminar(true) }}
+
+
                                                             />
                                                         </div>
                                                     </td>
@@ -228,52 +235,30 @@ export default function Proveedores() {
                             </div>
                         </div>
 
-                        {/* Paginación */}
-                        <nav className="flex items-center justify-between pt-4" aria-label="Table navigation">
-                            <ul className="inline-flex -space-x-px text-sm h-8">
-                                {/* Botón Anterior */}
-                                <li>
-                                    <button
-                                        onClick={() => paginate(paginaActual - 1)}
-                                        disabled={paginaActual === 1}
-                                        className={`flex items-center justify-center px-3 h-8 ${paginaActual === 1 ? "cursor-not-allowed opacity-50" : "hover:bg-gray-100 dark:hover:bg-gray-700"}`}
-                                    >
-                                        Anterior
-                                    </button>
-                                </li>
-
-                                {/* Números de página */}
-                                {[...Array(Math.ceil(filteredData.length / registrosPorPagina)).keys()].map(number => (
-                                    <li key={number + 1}>
-                                        <button
-                                            onClick={() => paginate(number + 1)}
-                                            className={`flex items-center justify-center px-3 h-8 ${paginaActual === number + 1 ? "bg-gray-300 dark:bg-gray-600" : "hover:bg-gray-100 dark:hover:bg-gray-700"}`}
-                                        >
-                                            {number + 1}
-                                        </button>
-                                    </li>
-                                ))}
-
-                                {/* Botón Siguiente */}
-                                <li>
-                                    <button
-                                        onClick={() => paginate(paginaActual + 1)}
-                                        disabled={paginaActual === Math.ceil(filteredData.length / registrosPorPagina)}
-                                        className={`flex items-center justify-center px-3 h-8 ${paginaActual === Math.ceil(filteredData.length / registrosPorPagina) ? "cursor-not-allowed opacity-50" : "hover:bg-gray-100 dark:hover:bg-gray-700"}`}
-                                    >
-                                        Siguiente
-                                    </button>
-                                </li>
-                            </ul>
-                        </nav>
+                        
                     </div>
-                </div>
+                        {/* Paginación */}
+                        <TablePagination
+                            listado={listaProveedores}
+                            paginaActual={paginaActual}
+                            onSet_PaginaActual={setPaginaActual}
+                        />
 
-                <Eliminar open={open} onClose={() => setOpen(false)} proveedorId={selectedProveedorId} />
-                <Agregar open={agregar} onClose={() => setAgregar(false)} mutate={mutate} />
-                <Ver open={ver} onClose={() => setVer(false)} proveedorId={selectedProveedorId} />
-                <Editar open={editar} onClose={() => setEditar(false)} proveedorId={selectedProveedorId} mutate={mutate} />
-            </div>
+                    {/* Componentes (Agregar, Editar, Eliminar) */}
+                    <AgregarProveedor open={modalAgregar} onClose={() => onModal_Agregar(false)} onReload={onGet_ListaProveedores} />
+                    <EditarProveedor open={modalEditar} onClose={() => onModal_Editar(false)} idProveedor={idProveedor} onReload={onGet_ListaProveedores} />
+                    <EliminarProveedor open={modalEliminar} onClose={() => onModal_Eliminar(false)} onReload={onGet_ListaProveedores} item={item} />
+
+                </>
+            )}
+        </>
+    );
+
+
+
+    return (
+        <>
+            <PageContent itemsBreadCrumb={itemsBreadCrumb} content={pageContent} tituloCard="Administración de Proveedores" />
         </>
     );
 }

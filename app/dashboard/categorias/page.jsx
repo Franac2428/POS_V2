@@ -1,79 +1,96 @@
 "use client";
-
-import Agregar from "@/app/components/categorias/crear";
-import { CirclePlus, FileUp, Pencil, SlidersHorizontal, Trash, Eye, Tag, User } from "lucide-react";
-import { useState, useEffect } from "react";
-import Eliminar from "../../components/categorias/eliminar";
-import Buscador from "../../components/buscador/buscar";
-import Editar from "@/app/components/categorias/editar";
-import Ver from "@/app/components/categorias/ver";
+import { CirclePlus, FileUp, Pencil, SlidersHorizontal, Trash, Eye, Tag, User, UserPlus, BookPlus, File, Notebook, Calendar, Sheet, FileSpreadsheet } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import HtmlNewLabel from "@/app/components/HtmlHelpers/Label1";
 import HtmlButton from "@/app/components/HtmlHelpers/Button";
-import HtmlBreadCrumb from "@/app/components/HtmlHelpers/BreadCrumb";
 import HtmlTableButton from "@/app/components/HtmlHelpers/TableButton";
-import useSWR from 'swr';
 import * as XLSX from 'xlsx';
-import { useSession } from 'next-auth/react';
+import { ClipLoader } from "react-spinners";
+import PageContent from "@/app/components/HtmlHelpers/PageContent";
+import TablePagination from "@/app/components/HtmlHelpers/Pagination";
+import { toast } from 'sonner';
+import AgregarCategoria from "@/app/components/categorias/agregarCategoria";
+import { FormatDate } from "@/app/api/utils/js-helpers";
+import EditarCategoria from "@/app/components/categorias/editarCategoria";
+import EliminarCategoria from "@/app/components/categorias/eliminarCategoria";
 
-const fetcher = (url) => fetch(url).then((res) => res.json());
+const itemsBreadCrumb = ["Dashboard", "Categorías"];
 
 export default function Categorias() {
-    const { data: session } = useSession();
+    const [onLoading, onSet_onLoading] = useState(true);
+    const [listaCategorias, onSet_ListaCategorias] = useState([]);
+    const fetchCalled = useRef(false);
+    const [modalAgregar,onModal_Agregar] = useState(false);
+    const [modalEditar, onModal_Editar] = useState(false);
+    const [modalEliminar, onModal_Eliminar] = useState(false);
+    const [categoriaEditar,onSetCategoriaEditar] = useState(null);
+
     const [paginaActual, setPaginaActual] = useState(1);
     const [registrosPorPagina] = useState(5); // Cantidad de registros por página
-    const [open, setOpen] = useState(false);
-    const [agregar, setAgregar] = useState(false);
-    const [ver, setVer] = useState(false);
-    const [editar, setEditar] = useState(false);
-    const [selectedCategoriaId, setSelectedCategoriaId] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filteredData, setFilteredData] = useState([]);
 
-    const { data, error, mutate } = useSWR(`/api/categorias`, fetcher);
-
-    // Paginación
+    const classDivsButtons = "sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4";
     const indexOfLastCategoria = paginaActual * registrosPorPagina;
     const indexOfFirstCategoria = indexOfLastCategoria - registrosPorPagina;
-    const currentCategorias = filteredData.slice(indexOfFirstCategoria, indexOfLastCategoria);
-    const paginate = (pageNumber) => setPaginaActual(pageNumber);
+    const currentCategorias = listaCategorias.filter(categoria => !categoria.Eliminado).slice(indexOfFirstCategoria, indexOfLastCategoria);
 
-    useEffect(() => {
-        if (data) {
-            setFilteredData(data);
+
+    //Obtener las categorías
+    const onGet_ListaCategorias = useCallback(async () => {
+        onSet_onLoading(true);
+        try {
+            const response = await fetch(`/api/categorias`);
+            const result = await response.json();
+            if (result.status === "success") {
+                onSet_ListaCategorias(result.data)
+                toast.success('Se han obtenido los registros');
+            }
+            else if (result.code === 204) {
+                toast.warning('No se encontraron registros');
+                onSet_ListaCategorias([])
+            }
+            else {
+                console.log(result.message);
+                toast.error('Error al obtener los registros');
+                onSet_ListaCategorias([])
+            }
         }
-    }, [data]);
-
-    const handleSearch = (term) => {
-        setSearchTerm(term);
-        if (term) {
-            const lowerCaseTerm = term.toLowerCase();
-            setFilteredData(data.filter(categoria =>
-                categoria.NombreCategoria.toLowerCase().includes(lowerCaseTerm) ||
-                categoria.CategoriaProductoID.toString().includes(lowerCaseTerm)
-            ));
-        } else {
-            setFilteredData(data);
+        catch (error) {
+            console.error('Error al obtener la lista de categorías:', error);
+            toast.error('Sucedió un error al obtener la lista de categorías');
         }
-        setPaginaActual(1); // Resetear a la primera página cuando se busca
-    };
+        finally {
+            onSet_onLoading(false);
+        }
+    }, []);
 
+
+    //Exportar Categorías
     const handleExport = () => {
-        if (!filteredData || filteredData.length === 0) {
-            alert("No hay datos para exportar.");
-            return;
+        if(listaCategorias.length == 0){
+            toast.warning("No hay datos para exportar");
         }
-        generateExcelReport(filteredData);
+
+        if (typeof document !== 'undefined') {
+            generateExcelReport(listaCategorias);
+        }
     };
 
     const generateExcelReport = (data) => {
-        const formattedData = data.map((categoria) => ({
-            "ID Categoría": categoria.CategoriaProductoID,
-            "Nombre": categoria.NombreCategoria,
-            "Descripción": categoria.Descripcion || "N/A",
-        }));
+        // Formatear los datos
+        const formattedData = data.map(c => {
+            return {
+                "No. Categoría": c.CategoriaProductoID,
+                "Nombre": c.NombreCategoria,
+                "Descripción":c.Descripcion,
+                "Estado": c.Eliminado ? 'Eliminada' : 'Activa',
+                "Fecha de Creación": FormatDate(c.FechaCreacion),
+            };
+        });
 
+        // Crear hoja de Excel
         const worksheet = XLSX.utils.json_to_sheet(formattedData);
 
+        // Estilo para el encabezado
         const headerStyle = {
             font: { bold: true, color: { rgb: "FFFFFF" } },
             fill: { fgColor: { rgb: "4F81BD" } },
@@ -82,20 +99,22 @@ export default function Categorias() {
                 top: { style: "thin", color: { rgb: "000000" } },
                 bottom: { style: "thin", color: { rgb: "000000" } },
                 left: { style: "thin", color: { rgb: "000000" } },
-                right: { style: "thin", color: { rgb: "000000" } },
-            },
+                right: { style: "thin", color: { rgb: "000000" } }
+            }
         };
 
-        const range = XLSX.utils.decode_range(worksheet["!ref"]);
+        // Aplicar estilo a los encabezados
+        const range = XLSX.utils.decode_range(worksheet['!ref']);
         for (let C = range.s.c; C <= range.e.c; C++) {
             const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
             if (!worksheet[cellAddress]) continue;
             worksheet[cellAddress].s = headerStyle;
         }
 
+        // Estilo para las celdas del contenido
         const cellStyle = {
             alignment: { horizontal: "left", vertical: "center" },
-            font: { color: { rgb: "333333" } },
+            font: { color: { rgb: "333333" } }
         };
 
         for (let R = range.s.r + 1; R <= range.e.r; R++) {
@@ -106,73 +125,59 @@ export default function Categorias() {
             }
         }
 
+        // Configurar anchos de columna
         const columnWidths = [
-            { wch: 15 },
-            { wch: 30 },
-            { wch: 40 },
+            { wch: 10 }, // No. Cliente
+            { wch: 10 }, // Nombre Completo
+            { wch: 20 }, // Descripción
+            { wch: 15 }, // Estado
+            { wch: 15 }  // Fecha de Creación
         ];
-        worksheet["!cols"] = columnWidths;
+        worksheet['!cols'] = columnWidths;
 
+        // Crear libro de Excel y hoja
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Categorías");
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Listado Categorías");
 
+        // Generar archivo Excel
         const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
         const dataBlob = new Blob([excelBuffer], { type: "application/octet-stream" });
         const downloadLink = document.createElement("a");
         downloadLink.href = URL.createObjectURL(dataBlob);
-        downloadLink.download = "Categorias.xlsx";
+        downloadLink.download = "ListadoCategorías.xlsx";
         downloadLink.click();
     };
 
-    if (error) return <div>Error al cargar los datos</div>;
-    if (!data) return <div>Cargando...</div>;
-    if (!data || !Array.isArray(data)) return <div>No hay datos disponibles</div>;
+    useEffect(() => {
+        if (!fetchCalled.current) {
+            fetchCalled.current = true;
+            onGet_ListaCategorias()
+        }
+    }, [onGet_ListaCategorias]);
 
-    const eliminarCategoria = async (categoriaId) => {
-        await fetch(`/api/categorias/${categoriaId}`, {
-            method: 'DELETE',
-        });
-        mutate(data.filter(categoria => categoria.CategoriaProductoID !== categoriaId), false);
-        setOpen(false);
-    };
 
-    return (
+    const pageContent = (
         <>
-            <div className="w-full">
-                <div className="grid grid-cols-10 gap-4 max-w-7xl mx-auto py-4">
-                    <h1 className="font-semibold col-span-10 text-3xl text-gray-900 dark:text-gray-100">Categorías</h1>
-                    <div className="col-span-3">
-                        <Buscador onSearch={handleSearch} />
+            {onLoading ? (
+                <ClipLoader size={30} speedMultiplier={1.5} />
+            ) : (
+                <>
+                    <div className={`grid ${classDivsButtons} gap-4 mx-auto`}>
+                        <HtmlButton colSize={1} color={"blue"} icon={BookPlus} onClick={() => onModal_Agregar(true)} legend="Nueva Categoría" />
+                        <HtmlButton colSize={1} color={"green"} icon={FileSpreadsheet} onClick={() => handleExport()} legend="Exportar Datos" />
                     </div>
-                    <div className="col-start-8 col-span-3">
-                        <div className="flex justify-end gap-6">
-                            <button className="transition-transform ease-in-out duration-75 hover:scale-105 active:scale-95 transform shadow-lg bg-white dark:bg-gray-700 px-3 py-2 rounded-lg">
-                                <SlidersHorizontal className="text-gray-500 dark:text-gray-400" />
-                            </button>
-                            <button className="flex items-center gap-3 shadow-lg active:scale-95 transition-transform ease-in-out duration-75 hover:scale-105 transform text-white font-semibold bg-green-500 dark:bg-green-600 px-4 py-2 rounded-lg" onClick={() => setAgregar(true)}>
-                                <CirclePlus className="text-white" />
-                                Agregar
-                            </button>
-                            <button
-                                onClick={handleExport}
-                                className="flex gap-3 shadow-lg text-green-500 dark:text-green-400 font-semibold bg-white dark:bg-gray-700 px-4 py-2 active:scale-95 transition-transform ease-in-out duration-75 hover:scale-105 transform border border-green-500 dark:border-green-400 rounded-lg"
-                            >
-                                <FileUp className="text-green-500 dark:text-green-400" />
-                                Exportar
-                            </button>
-
-                        </div>
-                    </div>
-                    <div className="shadow-lg col-span-10 bg-white dark:bg-gray-700 px-5 py-4 rounded-lg">
-                        <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+                    <br />
+                    <div className="shadow-xl border-2 bg-white dark:bg-gray-700 px-1 py-1 rounded-xl">
+                        <div className="relative overflow-x-auto shadow-md rounded-lg">
                             <div className="" style={{ overflow: 'auto', maxHeight: '30rem' }}>
                                 <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                                    <thead className="text-xs text-gray-700 uppercase bg-gray-200 dark:bg-gray-700 dark:text-gray-400">
-                                        <tr>
-                                            <th className="px-6 py-3 text-center" style={{ width: '15%' }}>ID</th>
-                                            <th className="px-6 py-3 text-center" style={{ width: '30%' }}>Nombre</th>
-                                            <th className="px-6 py-3 text-center" style={{ width: '40%' }}>Descripción</th>
-                                            <th className="px-6 py-3 text-center" style={{ width: '20%' }}>Acciones</th>
+                                    <thead>
+                                        <tr className="text-xs text-white uppercase bg-gray-900 dark:bg-gray-700 dark:text-gray-400">
+                                            <th className="px-6 py-3 text-center">No.</th>
+                                            <th className="px-6 py-3 text-center">Nombre</th>
+                                            <th className="px-6 py-3 text-center">Descripción</th>
+                                                <th className="px-6 py-3 text-center">Creado</th>
+                                            <th className="px-6 py-3 text-center">Acciones</th>
                                         </tr>
                                     </thead>
 
@@ -181,42 +186,31 @@ export default function Categorias() {
                                             categoria !== null && (
                                                 <tr key={index} className="bg-white dark:bg-gray-800">
                                                     <td className="px-6 py-4 text-center text-gray-900 dark:text-gray-300">
-                                                        <HtmlNewLabel color={"blue"} icon={Tag} legend={`ID: ${categoria.CategoriaProductoID}`} />
+                                                        #{categoria.CategoriaProductoID}
                                                     </td>
                                                     <td className="px-6 py-4 text-center text-gray-900 dark:text-gray-300">
-                                                        <HtmlNewLabel color={"indigo"} icon={User} legend={`Nombre: ${categoria.NombreCategoria}`} />
+                                                        <HtmlNewLabel color={"green"} icon={Tag} legend={categoria.NombreCategoria} />
                                                     </td>
                                                     <td className="px-6 py-4 text-center text-gray-900 dark:text-gray-300">
-                                                        <HtmlNewLabel color={"blue"} legend={categoria.Descripcion} />
+                                                        <HtmlNewLabel color={"blue"} icon={Notebook} legend={categoria.Descripcion} />
                                                     </td>
                                                     <td className="px-6 py-4 text-center text-gray-900 dark:text-gray-300">
-                                                        <div className="flex gap-2 justify-evenly items-center">
+                                                        <HtmlNewLabel color={"indigo"} icon={Calendar} legend={FormatDate(categoria.FechaCreacion)} />
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center text-gray-900 dark:text-gray-300">
+                                                        <div className="flex gap-1 justify-center items-center">
                                                             <HtmlTableButton
                                                                 color={"blue"}
                                                                 tooltip={"Editar Categoría"}
                                                                 icon={Pencil}
-                                                                onClick={() => {
-                                                                    setSelectedCategoriaId(categoria.CategoriaProductoID);
-                                                                    setEditar(true);
-                                                                }}
-                                                            />
-                                                            <HtmlTableButton
-                                                                color={"green"}
-                                                                tooltip={"Ver Categoría"}
-                                                                icon={Eye}
-                                                                onClick={() => {
-                                                                    setSelectedCategoriaId(categoria.CategoriaProductoID);
-                                                                    setVer(true);
-                                                                }}
+                                                                onClick={() => {onSetCategoriaEditar(categoria),onModal_Editar(true)}}
                                                             />
                                                             <HtmlTableButton
                                                                 color={"red"}
                                                                 tooltip={"Eliminar Categoría"}
                                                                 icon={Trash}
-                                                                onClick={() => {
-                                                                    setSelectedCategoriaId(categoria.CategoriaProductoID);
-                                                                    setOpen(true);
-                                                                }}
+                                                                onClick={() => { onSetCategoriaEditar(categoria), onModal_Eliminar(true) }}
+
                                                             />
                                                         </div>
                                                     </td>
@@ -229,50 +223,28 @@ export default function Categorias() {
                         </div>
 
                         {/* Paginación */}
-                        <nav className="flex items-center justify-between pt-4" aria-label="Table navigation">
-                            <ul className="inline-flex -space-x-px text-sm h-8">
-                                {/* Botón Anterior */}
-                                <li>
-                                    <button
-                                        onClick={() => paginate(paginaActual - 1)}
-                                        disabled={paginaActual === 1}
-                                        className={`flex items-center justify-center px-3 h-8 ${paginaActual === 1 ? "cursor-not-allowed opacity-50" : "hover:bg-gray-100 dark:hover:bg-gray-700"}`}
-                                    >
-                                        Anterior
-                                    </button>
-                                </li>
-
-                                {/* Números de página */}
-                                {[...Array(Math.ceil(filteredData.length / registrosPorPagina)).keys()].map(number => (
-                                    <li key={number + 1}>
-                                        <button
-                                            onClick={() => paginate(number + 1)}
-                                            className={`flex items-center justify-center px-3 h-8 ${paginaActual === number + 1 ? "bg-gray-300 dark:bg-gray-600" : "hover:bg-gray-100 dark:hover:bg-gray-700"}`}
-                                        >
-                                            {number + 1}
-                                        </button>
-                                    </li>
-                                ))}
-
-                                {/* Botón Siguiente */}
-                                <li>
-                                    <button
-                                        onClick={() => paginate(paginaActual + 1)}
-                                        disabled={paginaActual === Math.ceil(filteredData.length / registrosPorPagina)}
-                                        className={`flex items-center justify-center px-3 h-8 ${paginaActual === Math.ceil(filteredData.length / registrosPorPagina) ? "cursor-not-allowed opacity-50" : "hover:bg-gray-100 dark:hover:bg-gray-700"}`}
-                                    >
-                                        Siguiente
-                                    </button>
-                                </li>
-                            </ul>
-                        </nav>
+                        
                     </div>
-                </div>
-                <Eliminar open={open} onClose={() => setOpen(false)} categoriaId={selectedCategoriaId} onEliminar={eliminarCategoria} />
-                <Agregar open={agregar} onClose={() => setAgregar(false)} mutate={mutate} />
-                <Ver open={ver} onClose={() => setVer(false)} categoriaId={selectedCategoriaId} />
-                <Editar open={editar} onClose={() => setEditar(false)} categoriaId={selectedCategoriaId} mutate={mutate} />
-            </div>
+                        <TablePagination
+                            listado={listaCategorias}
+                            paginaActual={paginaActual}
+                            onSet_PaginaActual={setPaginaActual}
+                        />
+
+                    {/* Componentes (Agregar, Editar, Eliminar) */}
+                    <AgregarCategoria open={modalAgregar} onClose={() => onModal_Agregar(false)} onReload={onGet_ListaCategorias} />
+                    <EditarCategoria open={modalEditar} item={categoriaEditar} onClose={() => onModal_Editar(false)} onReload={onGet_ListaCategorias} />
+                    <EliminarCategoria open={modalEliminar} item={categoriaEditar} onClose={() => onModal_Eliminar(false)} onReload={onGet_ListaCategorias} />
+
+                
+                </>
+            )}
+        </>
+    );
+
+    return (
+        <>
+            <PageContent itemsBreadCrumb={itemsBreadCrumb} content={pageContent} tituloCard="Administración de Categorías" />
         </>
     );
 }

@@ -17,13 +17,12 @@ export default function CardProducto({ producto, agregarProductoTabla, onSelectP
 
   useEffect(() => {
     if (productoEliminado && productoEliminado.idProductoVenta === productoState.productoVentaId) {
-      setProductoState(prevState => ({
+      setProductoState((prevState) => ({
         ...prevState,
-        cantDisponible: prevState.cantDisponible + 1
+        cantDisponible: prevState.cantDisponible + productoEliminado.quantity
       }));
     }
   }, [productoEliminado]);
-
 
   return (
     <div className="max-w-xs border bg-white dark:bg-gray-800 p-4 flex flex-col items-center rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">

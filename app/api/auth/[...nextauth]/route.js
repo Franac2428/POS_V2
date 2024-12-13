@@ -69,7 +69,6 @@ const authOptions = {
             },
             where: {
               usuarioId:userFound.idUsuario,
-              esDiaLibre:false
             },
           });
 

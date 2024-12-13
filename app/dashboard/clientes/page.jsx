@@ -18,6 +18,8 @@ import { ClipLoader } from "react-spinners";
 import HtmlNewLabel from "@/app/components/HtmlHelpers/Label1";
 import { FormatDate } from "@/app/api/utils/js-helpers";
 import ModalBloquearDesbloquear from "@/app/components/utilities/bloquear";
+import { Pagination } from "@mui/material";
+import TablePagination from "@/app/components/HtmlHelpers/Pagination";
 
 const itemsBreadCrumb = ["Dashboard", "Clientes"];
 
@@ -39,7 +41,6 @@ export default function Clientes() {
     const indexOfLastClient = paginaActual * registrosPorPagina;
     const indexOfFirstClient = indexOfLastClient - registrosPorPagina;
     const currentClientes = listaClientes.slice(indexOfFirstClient, indexOfLastClient);
-    const paginate = (pageNumber) => onSet_PaginaActual(pageNumber);
 
     //Listado de clientes
     const onGet_ListaClientes = useCallback(async () => {
@@ -111,7 +112,7 @@ export default function Clientes() {
         // Estilo para el encabezado
         const headerStyle = {
             font: { bold: true, color: { rgb: "FFFFFF" } },
-            fill: { fgColor: { rgb: "4F81BD" } },
+            fill: { fgColor: { rgb: "4F81BA" } },
             alignment: { horizontal: "center", vertical: "center" },
             border: {
                 top: { style: "thin", color: { rgb: "000000" } },
@@ -209,10 +210,11 @@ export default function Clientes() {
                     ) : (
 
                         <div className="pt-4">
-                            <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+                            <div className="shadow-xl border-2 bg-white dark:bg-gray-700 px-1 py-1 rounded-xl">
+                                <div className="relative overflow-x-auto shadow-md rounded-lg">
                                 <div className="" style={{ overflow: 'auto', maxHeight: '30rem' }}>
                                     <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                                        <thead className="text-xs text-gray-700 uppercase bg-gray-200 dark:bg-gray-700 dark:text-gray-400">
+                                        <thead className="text-xs text-white uppercase bg-gray-900 dark:bg-gray-700 dark:text-gray-400">
                                             <tr>
                                                 <th scope="col" className="px-6 py-3 text-center" style={{ width: '5%' }}>No.</th>
                                                 <th scope="col" className="px-6 py-3" style={{ width: '10%' }}>Nombre Completo</th>
@@ -227,7 +229,7 @@ export default function Clientes() {
                                             {currentClientes.map((item, index) => (
                                                 item !== null && (
                                                     <tr key={index} className="bg-white dark:bg-gray-800">
-                                                        <td className="px-6 py-4 text-gray-900" style={{ width: '5%' }}># {index + 1}</td>
+                                                        <td className="px-6 py-4 text-gray-900" style={{ width: '5%' }}># {item.idCliente}</td>
                                                         <td className="px-6 py-4 text-gray-900" style={{ width: '10%' }}> {item.nombreCompleto}</td>
                                                         <td className="px-6 py-4 text-gray-900" style={{ width: '6%' }}>
                                                             <div className="mb-2" >
@@ -260,46 +262,12 @@ export default function Clientes() {
                                         </tbody>
                                     </table>
                                 </div>
+                                </div>
                             </div>
 
                             {/* Paginación */}
-                            <nav className="flex items-center justify-between pt-4" aria-label="Table navigation">
-                                <ul className="inline-flex -space-x-px text-sm h-8">
-                                    {/* Botón Anterior */}
-                                    <li>
-                                        <button
-                                            onClick={() => paginate(paginaActual - 1)}
-                                            disabled={paginaActual === 1}
-                                            className={`flex items-center justify-center px-3 h-8 ${paginaActual === 1 ? "cursor-not-allowed opacity-50" : "hover:bg-gray-100 dark:hover:bg-gray-700"}`}
-                                        >
-                                            Anterior
-                                        </button>
-                                    </li>
+                            <TablePagination listado={listaClientes} onSet_PaginaActual={onSet_PaginaActual} paginaActual={paginaActual} />
 
-                                    {/* Números de página */}
-                                    {[...Array(Math.ceil(listaClientes.length / registrosPorPagina)).keys()].map(number => (
-                                        <li key={number + 1}>
-                                            <button
-                                                onClick={() => paginate(number + 1)}
-                                                className={`flex items-center justify-center px-3 h-8 ${paginaActual === number + 1 ? "bg-gray-300 dark:bg-gray-600" : "hover:bg-gray-100 dark:hover:bg-gray-700"}`}
-                                            >
-                                                {number + 1}
-                                            </button>
-                                        </li>
-                                    ))}
-
-                                    {/* Botón Siguiente */}
-                                    <li>
-                                        <button
-                                            onClick={() => paginate(paginaActual + 1)}
-                                            disabled={paginaActual === Math.ceil(listaClientes.length / registrosPorPagina)}
-                                            className={`flex items-center justify-center px-3 h-8 ${paginaActual === Math.ceil(listaClientes.length / registrosPorPagina) ? "cursor-not-allowed opacity-50" : "hover:bg-gray-100 dark:hover:bg-gray-700"}`}
-                                        >
-                                            Siguiente
-                                        </button>
-                                    </li>
-                                </ul>
-                            </nav>
                         </div>
                     )}
 

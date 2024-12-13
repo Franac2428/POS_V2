@@ -151,13 +151,16 @@ export default function Inventario() {
     downloadLink.click();
   };
 
-  const filteredData = data ? data.filter(producto =>
-    (producto.Nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredData = Array.isArray(data)
+    ? data.filter(producto => (
+      producto.Nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       producto.ProductoID.toString().includes(searchTerm)) &&
-    (filtros.filterCategoria ? producto.CategoriaID === filtros.filterCategoria : true) &&
-    (filtros.filterEstado ? producto.Estado === filtros.filterEstado : true) &&
-    (filtros.filterProveedor ? producto.ProveedorID === filtros.filterProveedor : true)
-  ) : [];
+      (filtros.filterCategoria ? producto.CategoriaID === filtros.filterCategoria : true) &&
+      (filtros.filterEstado ? producto.Estado === filtros.filterEstado : true) &&
+      (filtros.filterProveedor ? producto.ProveedorID === filtros.filterProveedor : true)
+    )
+    : [];
+
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -173,11 +176,16 @@ export default function Inventario() {
     }
   }, [isMenuOpen]);
 
+  useEffect(() => {
+    console.log("Datos recibidos desde la API:", data);
+  }, [data]);
+
+
   if (error) return <div>Error al cargar los datos</div>;
   if (!data) return <div>Cargando...</div>;
 
   return (
-    <> 
+    <>
       <div className="w-full p-4">
         <nav className="flex" aria-label="Breadcrumb">
           <ol className="pl-2 inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
@@ -192,23 +200,24 @@ export default function Inventario() {
             Inventario
           </h5>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mx-0 items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-center">
             {/* Buscador */}
-            <div className="col-span-1 md:col-span-1">
+            <div className="col-span-1">
               <Buscador onSearch={handleSearch} />
             </div>
 
-            <div className="col-span-2  ml-8">
+            {/* Botón de filtro */}
+            <div className="ml-10 col-span-1 sm:col-span-1 md:col-span-1 flex justify-end sm:justify-start">
               <button
                 ref={filterButtonRef}
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className=" p-2 rounded-md bg-gray-200 dark:bg-gray-700">
+                className="p-2 rounded-md bg-gray-200 dark:bg-gray-700">
                 <Filter className="text-gray-900 dark:text-gray-100" />
               </button>
             </div>
 
             {/* Botones adicionales */}
-            <div className="col-span-1 md:col-span-1 flex space-x-2">
+            <div className="col-span-2 sm:col-span-2 md:col-span-2 flex justify-center sm:justify-end space-x-2">
               <HtmlButton
                 color="blue"
                 icon={Plus}
@@ -224,7 +233,8 @@ export default function Inventario() {
             </div>
           </div>
 
-          <hr className='mt-4'/>
+
+          <hr className='mt-4' />
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[80vh] overflow-y-auto">
             {filteredData.map((producto) => (
               <div
@@ -239,13 +249,14 @@ export default function Inventario() {
                   <HtmlNewLabel
                     color="blue"
                     icon={User}
-                    legend={`Proveedor: ${producto.ProveedorID}`}
+                    legend={`Proveedor: ${producto.NombreProveedor || "N/A"}`}
                   />
                   <HtmlNewLabel
                     color="blue"
                     icon={Tag}
-                    legend={`Categoría: ${producto.CategoriaID}`}
+                    legend={`Categoría: ${producto.NombreCategoria || "N/A"}`}
                   />
+
                   <HtmlNewLabel
                     color="green"
                     icon={Calendar}
@@ -300,7 +311,7 @@ export default function Inventario() {
         </div>
       )}
 
-      
+
     </>
   );
 }

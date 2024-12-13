@@ -1,51 +1,138 @@
 import { NextResponse } from 'next/server';
-import db from '@/app/lib/db'
+
+const { PrismaClient } = require('@prisma/client');
+
+const prisma = new PrismaClient();
 
 export async function GET(request, { params }) {
-  console.log(params.id)
+  const { id } = params;
+  try {
+    const cliente = await prisma.proveedores.findUnique({
+      select: {
+        Nombre:true,
+        Contacto:true,
+        Telefono:true,
+        Email:true,
+        SitioWeb:true,
+        Direccion:true
+      },
+      where:{
+        ProveedorID:Number(id)
+      }
 
-  const proveedores = await db.proveedores.findUnique({
-    where: {
-      ProveedorID: Number(params.id), // Utiliza el nombre correcto del campo de identificación
+    });
+
+    if (!cliente) {
+      return NextResponse.json({
+        code: 204,
+        status: "failed",
+        message: "No se encontraron registros.",
+      });
     }
-  });
-  console.log(proveedores)
-  return NextResponse.json(proveedores);
+
+    return NextResponse.json({
+      code: 200,
+      status: "success",
+      data:cliente,
+      message: "Se ha obtenido el proveedor satisfactoriamente",
+    });
+    
+  }
+  catch (error) {
+    console.error('Error al obtener el proveedor:', error);
+    return NextResponse.json({
+      code: 500,
+      status: "error",
+      message: "Error al obtener el proveedor: " + error.message,
+    });
+  }
+
 }
 
 export async function PUT(request, { params }) {
-  const data = await request.json();
-  const proveedorActualizado = await db.proveedores.update({
-    where: {
-      ProveedorID: Number(params.id), // Utiliza el nombre correcto del campo de identificación
-    },
-    data: data,
-  });
-  return NextResponse.json(proveedorActualizado);
+  try {
+    const { id } = params;
+    const model = await request.json();
+
+    const actualizarProveedor = await prisma.proveedores.update({
+      data: {
+        Nombre: model.nombre,
+        Telefono: model.telefono,
+        Email: model.correo,
+        SitioWeb: model.web,
+        IdUsuarioModificacion: model.idUsuarioModificacion,
+        FechaModificacion: new Date(),
+        Direccion: model.direccion,
+        Contacto: model.nombreContacto,
+      },
+      where: {
+        ProveedorID: Number(id),
+      },
+    });
+
+    // Verificar si se creó el proveedor
+    if (!actualizarProveedor) {
+      return NextResponse.json({
+        code: 400,
+        status: "error",
+        message: "Error al actualizar el proveedor"
+      });
+    }
+
+    return NextResponse.json({
+      code: 200,
+      status: "success",
+      data: true,
+      message: "Proveedor actualizado satisfactoriamente"
+    });
+  }
+  catch (error) {
+    console.error("Error al actualizar el proveedor:", error);
+    return NextResponse.json({
+      code: 500,
+      status: "error",
+      message: "Error al actualizar el proveedor: " + error.message,
+    });
+  }
 }
 
 export async function DELETE(request, { params }) {
   try {
-    const proveedor = await db.proveedores.findUnique({
+    const { id } = params;
+    const model = await request.json();
+
+    const eliminarProveedor = await prisma.proveedores.update({
+      data: {
+        Eliminado:true,
+        IdUsuarioModificacion: model.idUsuarioModificacion,
+        FechaModificacion: new Date(),
+      },
       where: {
-        ProveedorID: Number(params.id),
-      }
+        ProveedorID: Number(id),
+      },
     });
 
-    if (!proveedor) {
-      return NextResponse.json({ error: 'Proveedor no encontrado' }, { status: 404 });
+    // Verificar si se eliminó el proveedor
+    if (!eliminarProveedor) {
+      return NextResponse.json({
+        code: 400,
+        status: "error",
+        message: "Error al eliminar el proveedor",
+      });
     }
 
-    const proveedores = await db.proveedores.delete({
-      where: {
-        ProveedorID: Number(params.id),
-      }
+    return NextResponse.json({
+      code: 200,
+      status: "success",
+      data: true,
+      message: "Proveedor eliminado satisfactoriamente",
     });
-
-    console.log(proveedores)
-    return NextResponse.json(proveedores);
   } catch (error) {
-    console.error('Error al eliminar el proveedor:', error);
-    return NextResponse.json({ error: 'Error al eliminar el proveedor' }, { status: 500 });
+    console.error("Error al eliminar el proveedor:", error);
+    return NextResponse.json({
+      code: 500,
+      status: "error",
+      message: "Error al eliminar el proveedor: " + error.message,
+    });
   }
 }

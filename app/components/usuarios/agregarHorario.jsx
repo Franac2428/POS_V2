@@ -20,7 +20,6 @@ export default function AgregarHorario({ open, onClose, idUsuario, onGet_ListaUs
     domingo: { inicio: '', fin: '', es_dia_libre: false }
   };
 
-
   const [horario, onSet_Horario] = useState(initialHorario);
   const [errors, setErrors] = useState({});
   const [loading, onSet_Loading] = useState(false);
@@ -55,28 +54,20 @@ export default function AgregarHorario({ open, onClose, idUsuario, onGet_ListaUs
     Object.keys(horario).forEach(dia => {
       const { inicio, fin, es_dia_libre } = horario[dia];
       if (!es_dia_libre) {
-        if (!inicio)
-          newErrors[`${dia}_inicio`] = 'Hora Inicio es requerida';
-
-        if (!fin)
-          newErrors[`${dia}_fin`] = 'Hora Fin es requerida';
-
-        if (inicio && fin && inicio >= fin)
-          newErrors[`${dia}_horario`] = 'Hora Inicio debe ser menor';
-        
-
+        if (!inicio) newErrors[`${dia}_inicio`] = 'Hora Inicio es requerida';
+        if (!fin) newErrors[`${dia}_fin`] = 'Hora Fin es requerida';
+        if (inicio && fin && inicio >= fin) newErrors[`${dia}_horario`] = 'Hora Inicio debe ser menor';
       }
     });
-    toast.warning("Aún existen campos requeridos por completar...")
-
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      toast.warning("Aún existen campos requeridos por completar...");
+    }
     return Object.keys(newErrors).length === 0;
   };
 
-  //Guardar el horario
   const handleSubmit = async (event) => {
     event.preventDefault();
-
     if (!validateForm()) return;
 
     if (!idUsuario) {
@@ -84,9 +75,7 @@ export default function AgregarHorario({ open, onClose, idUsuario, onGet_ListaUs
       return;
     }
 
-
     try {
-
       onSet_Loading(true);
 
       let model = {
@@ -99,7 +88,6 @@ export default function AgregarHorario({ open, onClose, idUsuario, onGet_ListaUs
         }))
       };
 
-
       const response = await fetch('/api/usuarios/horarios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -107,28 +95,23 @@ export default function AgregarHorario({ open, onClose, idUsuario, onGet_ListaUs
       });
 
       const data = await response.json();
-      if (data.status == "success") {
-        toast.success(data.message)
+      if (data.status === "success") {
+        toast.success(data.message);
         onGet_ListaUsuarios();
-        onSet_Loading(false);
         onClose();
+      } else {
+        toast.error("Error al crear el horario del usuario: " + data.message);
       }
-      else {
-        onSet_Loading(false);
-        toast.error("Error al crear el horario del usuario: " + data.message)
-      }
-    }
-    catch (error) {
+    } catch (error) {
+      toast.error("Error al crear el horario: " + error);
+    } finally {
       onSet_Loading(false);
-      console.error('Error al crear el horario:', error);
-      toast.error("Error al crear el horario: " + error)
     }
   };
 
   const resetForm = () => {
     onSet_Horario(initialHorario);
     setErrors({});
-    onSet_Loading(false);
   };
 
   const handleCancel = () => {
@@ -141,11 +124,14 @@ export default function AgregarHorario({ open, onClose, idUsuario, onGet_ListaUs
   return (
     <div
       onClick={onClose}
-      className={`fixed inset-0 flex justify-center items-center transition-opacity ${open ? "visible bg-black bg-opacity-20 dark:bg-opacity-30" : "invisible"}`}
+      className={`fixed inset-0 z-50 flex justify-center items-center transition-opacity ${open ? "visible bg-black bg-opacity-20 dark:bg-opacity-30" : "invisible"
+        }`}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`bg-white dark:bg-gray-800 rounded-xl shadow p-6 transition-all ${open ? "scale-100 opacity-100" : "scale-125 opacity-0"} m-auto max-w-4xl`}
+        className={`relative bg-white dark:bg-gray-800 rounded-xl shadow p-6 w-full max-w-xl overflow-auto transition-all ${open ? "scale-100 opacity-100" : "scale-125 opacity-0"
+          } m-4`}
+        style={{ maxHeight: "95vh" }}
       >
         <button
           onClick={handleCancel}
@@ -159,44 +145,62 @@ export default function AgregarHorario({ open, onClose, idUsuario, onGet_ListaUs
             <Clock /> Asignar Horario
           </h2>
 
-          <form onSubmit={handleSubmit}>
-            {/* Contenedor con scroll solo para la tabla */}
-            <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-              <div className="" style={{ overflow: 'auto', maxHeight: '20rem' }}>
-                <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                  <thead className="text-xs text-gray-700 uppercase bg-gray-200 dark:bg-gray-700 dark:text-gray-400">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Día</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hora Inicio</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hora Fin</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Día Libre</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {Object.keys(horario).map((dia) => (
-                      <tr key={dia}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 capitalize">{dia}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <HtmlFormInput type={"time"} id={"iptDiaInicio_" + dia} value={horario[dia].inicio} disabled={horario[dia].es_dia_libre} onChange={(e) => handleChange(dia, "inicio", e.target.value)} additionalClass={errors[`${dia}_inicio`] || errors[`${dia}_horario`] ? 'is-invalid' : ''} />
-                          {errors[`${dia}_inicio`] && <span className="text-red-500 text-sm">{errors[`${dia}_inicio`]}</span>}
-                          {errors[`${dia}_horario`] && <span className="text-red-500 text-sm">{errors[`${dia}_horario`]}</span>}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <HtmlFormInput type={"time"} id={"iptDiaFin_" + dia} value={horario[dia].fin} disabled={horario[dia].es_dia_libre} onChange={(e) => handleChange(dia, "fin", e.target.value)} additionalClass={errors[`${dia}_fin`] || errors[`${dia}_horario`] ? 'is-invalid' : ''} />
-                          {errors[`${dia}_fin`] && <span className="text-red-500 text-sm">{errors[`${dia}_fin`]}</span>}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-
-                          <HtmlCheckButton checked={horario[dia].es_dia_libre} onChange={() => handleDiaLibreChange(dia)} />
-                        </td>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="relative overflow-x-auto">
+              <div className="overflow-auto" style={{ maxHeight: '15rem' }}>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full table-auto text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-200 dark:bg-gray-700 dark:text-gray-400">
+                      <tr>
+                        <th className="px-4 py-2">Día</th>
+                        <th className="px-4 py-2">Hora Inicio</th>
+                        <th className="px-4 py-2">Hora Fin</th>
+                        <th className="px-4 py-2">Día Libre</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {Object.keys(horario).map((dia) => (
+                        <tr key={dia} className="text-center">
+                          <td className="px-4 py-2 capitalize">{dia}</td>
+                          <td className="px-4 py-2">
+                            <HtmlFormInput
+                              type={"time"}
+                              id={"iptDiaInicio_" + dia}
+                              value={horario[dia].inicio}
+                              disabled={horario[dia].es_dia_libre}
+                              onChange={(e) => handleChange(dia, "inicio", e.target.value)}
+                              additionalClass={errors[`${dia}_inicio`] || errors[`${dia}_horario`] ? 'is-invalid' : ''}
+                            />
+                            {errors[`${dia}_inicio`] && <span className="text-red-500 text-sm">{errors[`${dia}_inicio`]}</span>}
+                            {errors[`${dia}_horario`] && <span className="text-red-500 text-sm">{errors[`${dia}_horario`]}</span>}
+                          </td>
+                          <td className="px-4 py-2">
+                            <HtmlFormInput
+                              type={"time"}
+                              id={"iptDiaFin_" + dia}
+                              value={horario[dia].fin}
+                              disabled={horario[dia].es_dia_libre}
+                              onChange={(e) => handleChange(dia, "fin", e.target.value)}
+                              additionalClass={errors[`${dia}_fin`] || errors[`${dia}_horario`] ? 'is-invalid' : ''}
+                            />
+                            {errors[`${dia}_fin`] && <span className="text-red-500 text-sm">{errors[`${dia}_fin`]}</span>}
+                          </td>
+                          <td className="px-4 py-2">
+                            <HtmlCheckButton
+                              checked={horario[dia].es_dia_libre}
+                              onChange={() => handleDiaLibreChange(dia)}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
               </div>
             </div>
 
-            <div className="flex justify-end gap-4 mt-5">
+            <div className="flex justify-end gap-4">
               {loading ? (
                 <ClipLoader size={30} speedMultiplier={1.5} />
               ) : (
@@ -205,7 +209,6 @@ export default function AgregarHorario({ open, onClose, idUsuario, onGet_ListaUs
                   <HtmlButton type='button' color={"gray"} legend={"Cancelar"} icon={XCircle} onClick={handleCancel} />
                 </>
               )}
-
             </div>
           </form>
         </div>
@@ -213,4 +216,3 @@ export default function AgregarHorario({ open, onClose, idUsuario, onGet_ListaUs
     </div>
   );
 }
-

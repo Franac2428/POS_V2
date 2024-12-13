@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, useCallback, useRef } from 'react'; // Importa useCallback
-import { useSession } from 'next-auth/react';
+import { getSession, useSession } from 'next-auth/react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Check, Clock, X } from "lucide-react";
@@ -9,6 +9,9 @@ import { Toaster, toast } from 'sonner';
 import HtmlNewLabel from '@/app/components/HtmlHelpers/Label1';
 import HtmlBreadCrumb from '@/app/components/HtmlHelpers/BreadCrumb';
 import { ClipLoader } from 'react-spinners';
+import Tooltip from '@mui/material/Tooltip';
+
+
 
 const itemsBreadCrumb = ["Dashboard", "Evaluaciones"];
 
@@ -17,33 +20,38 @@ const EvaluacionesDesempeno = () => {
     const idUsuarioEmpleado = Number(session?.user.id);
     const [evaluaciones, setEvaluaciones] = useState([]);
     const [onLoading, setLoading] = useState(true);
-    const [metaId, setMetaId] = useState(true);
-    const [error, setError] = useState(null);
     const fetchCalled = useRef(false);
 
 
     const onGet_Evaluaciones = useCallback(async () => {
-        if (!idUsuarioEmpleado) return;
+        const session = await getSession();
+        const idUsuario = session.user.id;
+
+        if (!idUsuario) {
+            toast.error("Error al obtener el usuario. Contacte al administrador");
+            return;
+        }
+
         try {
-            const response = await fetch(`/api/usuarios/metas/${idUsuarioEmpleado}`);
+            const response = await fetch(`/api/usuarios/metas/${idUsuario}`);
             const result = await response.json();
             if (result.status == "success") {
                 setEvaluaciones(result.data)
-                toast.success('Se han obtenido los registros');
+                toast.success('Se han obtenido las evaluaciones');
             }
             else if (result.code === 204) {
-                toast.warning('No se encontraron registros');
+                toast.warning('No se encontraron evaluaciones registradas');
                 setEvaluaciones([])
             }
             else {
                 console.log(result.message);
-                toast.error('Error al obtener los registros');
+                toast.error('Error al obtener las evaluaciones');
                 setEvaluaciones([])
             }
         }
         catch (error) {
-            console.error('Error al obtener las metas:', error);
-            toast.error('Sucedió un error al obtener las metas');
+            console.error('Error al obtener las evaluaciones:', error);
+            toast.error('Error al obtener las evaluaciones');
             setEvaluaciones([])
         }
         finally {
@@ -69,20 +77,20 @@ const EvaluacionesDesempeno = () => {
             const data = await response.json();
 
             if (data.status == "success") {
-              toast.success("Acción registrada correctamente");
-              onGet_Evaluaciones();
+                onGet_Evaluaciones();
+                toast.success("Evaluación ha sido marcada correctamente");
             }
             else {
-              toast.error(data.message)
+                toast.error(data.message)
             }
-          }
-          catch (error) {
-            console.error('Error al actualizar el registro:', error);
-            toast.error("Error al actualizar el registro: " + error);
-          }
-          finally {
+        }
+        catch (error) {
+            console.error('Error al marcar la evaluación:', error);
+            toast.error("Error al marcar la evaluación: " + error);
+        }
+        finally {
             setLoading(false);
-          }
+        }
     };
 
     const capitalizeFirstLetter = (string) => {
@@ -101,7 +109,7 @@ const EvaluacionesDesempeno = () => {
             </div>
 
             <div className="w-full pl-4 pr-4">
-                <div className="block w-full p-6 bg-gray-100 border border-gray-200 rounded-lg shadow">
+                <div className="block w-full p-6 bg-white border border-gray-200 rounded-lg shadow">
                     <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                         Evaluaciones de usuario
                     </h5>
@@ -114,21 +122,25 @@ const EvaluacionesDesempeno = () => {
 
                         <div className="container mx-auto text-gray-900 dark:text-gray-100">
                             {evaluaciones.length == 0 ? (
-                                <p>No se han registrado evaluaciones para usted.</p>
+                                <div class="p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300" role="alert">
+                                    <span class="font-medium">Warning alert!</span> Change a few things up and try submitting again.
+                                </div>
                             ) : (
                                 <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {evaluaciones && evaluaciones.map((item) => (
                                         <div
                                             key={item.idMeta}
-                                            className="relative shadow-lg bg-white dark:bg-gray-800 p-6 rounded-lg transition hover:shadow-xl"
+                                            className="relative shadow-xs border border-gray-300 bg-white dark:bg-gray-800 p-6 rounded-lg transition hover:shadow-2xl"
                                         >
-                                            <button
-                                                onClick={() => handleMarcar(item.idMeta)}
-                                                className="absolute top-2 right-2 p-1 rounded-lg text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-600 dark:hover:text-gray-300"
-                                                aria-label="Marcar como leída"
-                                            >
-                                                <Check size={25} strokeWidth={2} />
-                                            </button>
+                                            <Tooltip title={"Marcar como leída"} placement='top' arrow>
+                                                <button
+                                                    onClick={() => handleMarcar(item.idMeta)}
+                                                    className="absolute top-2 right-2 p-1 rounded-lg text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-600 dark:hover:text-gray-300"
+                                                    aria-label="Marcar como leída"
+                                                >
+                                                    <Check size={25} strokeWidth={2} />
+                                                </button>
+                                            </Tooltip>
 
                                             <div className="pb-4">
                                                 <p className="text-xl font-semibold text-green-600 dark:text-green-300">

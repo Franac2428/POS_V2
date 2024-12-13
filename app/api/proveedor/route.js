@@ -1,28 +1,91 @@
-import { NextResponse } from 'next/server';
-import db from '@/app/lib/db'
-export async function GET() {
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
-  const proveedores = await db.proveedores.findMany()
-  return NextResponse.json(proveedores);
+export async function GET() {
+  try {
+    const listaProveedores = await prisma.proveedores.findMany({
+      select: {
+        ProveedorID:true,
+        Nombre:true,
+        Telefono:true,
+        Email:true,
+        SitioWeb:true,
+        Eliminado:true,
+        FechaCreacion:true,
+        Direccion:true,
+        Contacto:true
+      }
+    });
+
+    if (listaProveedores.length == 0) {
+      return NextResponse.json({
+        code: 204,
+        status: "failed",
+        message: "No se encontraron registros.",
+      });
+    }
+
+    return NextResponse.json({
+      code: 200,
+      status: "success",
+      data: listaProveedores,
+      message: "",
+    });
+  } catch (error) {
+    console.error("Error al obtener los datos:", error);
+    return NextResponse.json(
+      {
+        code: 500,
+        status: "error",
+        message: "Error al obtener los datos: " + error.message,
+      },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request) {
-  const data = await request.json();
   try {
-    const nuevoProveedor = await db.proveedores.create({
+    const model = await request.json();
+
+    const nuevoProveedor = await prisma.proveedores.create({
       data: {
-        Nombre: data.Nombre,
-        Tipo: data.Tipo,
-        Telefono: data.Telefono,
-        Email: data.Email,
-        SitioWeb: data.SitioWeb,
-        Direccion: data.Direccion,
-        Contacto: data.Contacto,
+        Nombre: model.nombre,
+        Telefono: model.telefono,
+        Email: model.correo,
+        SitioWeb: model.web,
+        IdUsuarioCreacion:model.idUsuarioCreacion,
+        FechaCreacion: new Date(),
+        Direccion: model.direccion,
+        Contacto: model.nombreContacto,
       },
     });
-    return NextResponse.json(nuevoProveedor);
-  } catch (error) {
-    console.error('Error al crear el proveedor:', error);
-    return NextResponse.json({ error: 'Error al crear el proveedor' }, { status: 500 });
+
+    // Verificar si se creó
+    if (!nuevoProveedor) {
+      return NextResponse.json({
+        code: 400,
+        status: "error",
+        message: "Error al registrar el proveedor",
+      });
+    }
+
+    return NextResponse.json({
+      code: 200,
+      status: "success",
+      data: true,
+      message: "Proveedor registrado satisfactoriamente",
+    });
+  } 
+  catch (error) {
+    console.error("Error al registrar el proveedor:", error);
+    
+    return NextResponse.json({
+      code: 500,
+      status: "error",
+      message: "Error al registrar el proveedor: " + error.message,
+    });
   }
 }
+

@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  AddRemoveClassById,
   FormatDate,
   RemoveValidationClasses,
   ValidateFormByClass,
+  ValidateNumbers,
 } from "@/app/api/utils/js-helpers";
 import HtmlBreadCrumb from "@/app/components/HtmlHelpers/BreadCrumb";
 import HtmlButton from "@/app/components/HtmlHelpers/Button";
@@ -32,6 +34,7 @@ import { ClipLoader } from "react-spinners";
 import { Toaster, toast } from "sonner";
 import { useReactToPrint } from "react-to-print";
 import TicketCaja from "@/app/components/caja/printCaja";
+import TablePagination from "@/app/components/HtmlHelpers/Pagination";
 
 const itemsBreadCrumb = ["Home", "Caja"];
 
@@ -90,11 +93,11 @@ export default function Caja() {
 
       if (result.status == "success") {
         onSet_CajaActual(result.data);
-      } 
+      }
       else if (result.code == 204) {
         toast.warning(result.message);
         onSet_CajaActual(null);
-      } 
+      }
       else {
         onSet_CajaActual(null);
         toast.error(result.message);
@@ -163,13 +166,13 @@ export default function Caja() {
   }, []);
 
   const handlePrintClick = async (item) => {
-    await onGet_Caja(item); 
+    await onGet_Caja(item);
 
     setTimeout(() => {
       if (ticketRef.current) {
-        handlePrint(); 
+        handlePrint();
       }
-    }, 100); 
+    }, 100);
   };
 
   const handlePrint = useReactToPrint({
@@ -182,7 +185,15 @@ export default function Caja() {
     if (!isValid) {
       toast.warning("Debe indicar un monto para aperturar la caja");
       return;
-    } else {
+    } 
+    
+    if (!ValidateNumbers(formData.montoInicio)) {
+      toast.warning("Debe ingresar solo números");
+      AddRemoveClassById("txtMontoInicio","is-warning","is-invalid")
+      return;
+    }
+    
+    else {
       onSet_onLoading(true);
       let model = {
         montoInicioCaja: Number(formData.montoInicio),
@@ -243,9 +254,9 @@ export default function Caja() {
             <>
               {!cajaActual ? (
                 <div className="grid grid-cols-2 md:grid-cols-12 gap-4 mx-auto">
-                  <HtmlFormInput additionalClass={"fc-montoInicio"} legend={"Monto Inicio Caja"} value={formData.montoInicio} name={"montoInicio"} colSize={3} onChange={handleChange}/>
-                  <div className="col-span-2 mt-8">
-                    <HtmlButton colSize={1} color={"blue"} icon={HandCoins} legend="Abrir Caja" onClick={() => {onPost_AbrirCaja();}}
+                  <HtmlFormInput id={"txtMontoInicio"} additionalClass={"fc-montoInicio"} legend={"Monto Inicio Caja"} value={formData.montoInicio} name={"montoInicio"} colSize={3} onChange={handleChange} />
+                  <div className="col-span-3 mt-8">
+                    <HtmlButton colSize={1} color={"blue"} icon={HandCoins} legend="Abrir Caja" onClick={() => { onPost_AbrirCaja(); }}
                     />
                   </div>
                 </div>
@@ -259,213 +270,157 @@ export default function Caja() {
             </div>
           ) : (
             <div className="pt-4">
-              <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-                <div
-                  className=""
-                  style={{ overflow: "auto", maxHeight: "30rem" }}
-                >
-                  <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-200 dark:bg-gray-700 dark:text-gray-400">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3"
-                          style={{ width: "5%" }}
-                        >
-                          No. Caja
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3"
-                          style={{ width: "5%" }}
-                        >
-                          Fecha Inicio
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3"
-                          style={{ width: "5%" }}
-                        >
-                          Fecha Cierre
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3"
-                          style={{ width: "5%" }}
-                        >
-                          Monto Inicio
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3"
-                          style={{ width: "5%" }}
-                        >
-                          Monto Cierre
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3"
-                          style={{ width: "5%" }}
-                        >
-                          Acciones
-                        </th>
-                      </tr>
-                    </thead>
+              <div className="shadow-xl border-2 bg-white dark:bg-gray-700 px-1 py-1 rounded-xl">
+                <div className="relative overflow-x-auto shadow-md rounded-lg">
+                  <div
+                    className=""
+                    style={{ overflow: "auto", maxHeight: "30rem" }}
+                  >
+                    <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                      <thead className="text-xs text-white uppercase bg-gray-900 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                          <th
+                            scope="col"
+                            className="px-6 py-3"
+                            style={{ width: "5%" }}
+                          >
+                            No. Caja
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3"
+                            style={{ width: "5%" }}
+                          >
+                            Fecha Inicio
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3"
+                            style={{ width: "5%" }}
+                          >
+                            Fecha Cierre
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3"
+                            style={{ width: "5%" }}
+                          >
+                            Monto Inicio
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3"
+                            style={{ width: "5%" }}
+                          >
+                            Monto Cierre
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3"
+                            style={{ width: "5%" }}
+                          >
+                            Acciones
+                          </th>
+                        </tr>
+                      </thead>
 
-                    <tbody>
-                      {currentCajas.map(
-                        (item, index) =>
-                          item !== null && (
-                            <tr
-                              key={index}
-                              className="bg-white dark:bg-gray-800"
-                            >
-                              <td className="px-6 py-4 text-black">
-                                # {item.idInfoCaja}
-                              </td>
-                              <td className="px-6 py-4">
-                                <HtmlNewLabel
-                                  icon={Calendar}
-                                  color={"green"}
-                                  legend={FormatDate(item.fechaApertura)}
-                                />
-                              </td>
-                              <td className="px-6 py-4">
-                                {item.fechaCierre == null ? (
+                      <tbody>
+                        {currentCajas.map(
+                          (item, index) =>
+                            item !== null && (
+                              <tr
+                                key={index}
+                                className="bg-white dark:bg-gray-800"
+                              >
+                                <td className="px-6 py-4 text-black">
+                                  # {item.idInfoCaja}
+                                </td>
+                                <td className="px-6 py-4">
                                   <HtmlNewLabel
-                                    icon={BookCheck}
+                                    icon={Calendar}
+                                    color={"green"}
+                                    legend={FormatDate(item.fechaApertura)}
+                                  />
+                                </td>
+                                <td className="px-6 py-4">
+                                  {item.fechaCierre == null ? (
+                                    <HtmlNewLabel
+                                      icon={BookCheck}
+                                      color={"blue"}
+                                      legend={"Caja Actual"}
+                                    />
+                                  ) : (
+                                    <HtmlNewLabel
+                                      icon={Lock}
+                                      color={"red"}
+                                      legend={FormatDate(item.fechaCierre)}
+                                    />
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 text-black">
+                                  ₡{item.montoInicioCaja}
+                                </td>
+                                <td className="px-6 py-4 text-black">
+                                  ₡
+                                  {item.montoCierreCaja == null
+                                    ? 0
+                                    : item.montoCierreCaja}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <HtmlTableButton
+                                    tooltip={"Ver Caja"}
                                     color={"blue"}
-                                    legend={"Caja Actual"}
-                                  />
-                                ) : (
-                                  <HtmlNewLabel
-                                    icon={Lock}
-                                    color={"red"}
-                                    legend={FormatDate(item.fechaCierre)}
-                                  />
-                                )}
-                              </td>
-                              <td className="px-6 py-4 text-black">
-                                ₡{item.montoInicioCaja}
-                              </td>
-                              <td className="px-6 py-4 text-black">
-                                ₡
-                                {item.montoCierreCaja == null
-                                  ? 0
-                                  : item.montoCierreCaja}
-                              </td>
-                              <td className="px-6 py-4">
-                                <HtmlTableButton
-                                  tooltip={"Ver Caja"}
-                                  color={"blue"}
-                                  onClick={() => {
-                                    onSet_ModalCaja(true),
-                                      onSet_IdCaja(item.idInfoCaja);
-                                  }}
-                                  icon={Eye}
-                                />
-                                {item.fechaCierre && (
-                                  <HtmlTableButton
-                                    tooltip={"Imprimir Cierre"}
-                                    color={"teal"}
                                     onClick={() => {
-                                      handlePrintClick(item)
-                                    }}
-                                    icon={Printer}
-                                  />
-                                )}
-                                {!item.fechaCierre &&(
-                                <HtmlTableButton
-                                  tooltip={"Movimientos de Dinero"}
-                                  color={"yellow"}
-                                  onClick={() => {
-                                    onSet_IdCaja(item.idInfoCaja),
-                                    onSet_ModalLista(true)
-                                      
-                                  }}
-                                  icon={ArrowLeftRight}
-                                />
-                                )}
-                                {!item.fechaCierre && (
-                                  <HtmlTableButton
-                                    tooltip={"Cerrar Caja"}
-                                    color={"red"}
-                                    onClick={() => {
-                                      onSet_ModalCierre(true),
+                                      onSet_ModalCaja(true),
                                         onSet_IdCaja(item.idInfoCaja);
                                     }}
-                                    icon={LockClosedIcon}
+                                    icon={Eye}
                                   />
-                                )}
-                              </td>
-                            </tr>
-                          )
-                      )}
-                    </tbody>
-                  </table>
+                                  {item.fechaCierre && (
+                                    <HtmlTableButton
+                                      tooltip={"Imprimir Cierre"}
+                                      color={"teal"}
+                                      onClick={() => {
+                                        handlePrintClick(item)
+                                      }}
+                                      icon={Printer}
+                                    />
+                                  )}
+                                  {!item.fechaCierre && (
+                                    <HtmlTableButton
+                                      tooltip={"Movimientos de Dinero"}
+                                      color={"yellow"}
+                                      onClick={() => {
+                                        onSet_IdCaja(item.idInfoCaja),
+                                          onSet_ModalLista(true)
+
+                                      }}
+                                      icon={ArrowLeftRight}
+                                    />
+                                  )}
+                                  {!item.fechaCierre && (
+                                    <HtmlTableButton
+                                      tooltip={"Cerrar Caja"}
+                                      color={"red"}
+                                      onClick={() => {
+                                        onSet_ModalCierre(true),
+                                          onSet_IdCaja(item.idInfoCaja);
+                                      }}
+                                      icon={LockClosedIcon}
+                                    />
+                                  )}
+                                </td>
+                              </tr>
+                            )
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
+                
               </div>
-              {/* Paginación */}
-              <nav
-                className="flex items-center justify-between pt-4"
-                aria-label="Table navigation"
-              >
-                <ul className="inline-flex -space-x-px text-sm h-8">
-                  {/* Botón Anterior */}
-                  <li>
-                    <button
-                      onClick={() => paginate(paginaActual - 1)}
-                      disabled={paginaActual === 1}
-                      className={`flex items-center justify-center px-3 h-8 ${
-                        paginaActual === 1
-                          ? "cursor-not-allowed opacity-50"
-                          : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                      }`}
-                    >
-                      Anterior
-                    </button>
-                  </li>
+                <TablePagination listado={infoCaja} onSet_PaginaActual={onSet_PaginaActual} paginaActual={paginaActual} />
 
-                  {/* Números de página */}
-                  {[
-                    ...Array(
-                      Math.ceil(infoCaja.length / registrosPorPagina)
-                    ).keys(),
-                  ].map((number) => (
-                    <li key={number + 1}>
-                      <button
-                        onClick={() => paginate(number + 1)}
-                        className={`flex items-center justify-center px-3 h-8 ${
-                          paginaActual === number + 1
-                            ? "bg-gray-300 dark:bg-gray-600"
-                            : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                        }`}
-                      >
-                        {number + 1}
-                      </button>
-                    </li>
-                  ))}
-
-                  {/* Botón Siguiente */}
-                  <li>
-                    <button
-                      onClick={() => paginate(paginaActual + 1)}
-                      disabled={
-                        paginaActual ===
-                        Math.ceil(infoCaja.length / registrosPorPagina)
-                      }
-                      className={`flex items-center justify-center px-3 h-8 ${
-                        paginaActual ===
-                        Math.ceil(infoCaja.length / registrosPorPagina)
-                          ? "cursor-not-allowed opacity-50"
-                          : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                      }`}
-                    >
-                      Siguiente
-                    </button>
-                  </li>
-                </ul>
-              </nav>
             </div>
           )}
         </div>
@@ -481,12 +436,12 @@ export default function Caja() {
         cajaActual={cajaActual}
         idInfoCaja={setIdCaja}
       />
-      <CierreCaja open={openModalCierre} idInfoCaja={setIdCaja} onClose={() => { onSet_ModalCierre(false)}} onGet_ListaInfoCaja={onGet_ListaInfoCaja} />
+      <CierreCaja open={openModalCierre} idInfoCaja={setIdCaja} onClose={() => { onSet_ModalCierre(false) }} onGet_ListaInfoCaja={onGet_ListaInfoCaja} />
       {selectedItem && (
         <div style={{ display: "none" }}>
           <TicketCaja ref={ticketRef} item={selectedItem} />
         </div>
-      )}  
+      )}
 
     </>
   );

@@ -142,10 +142,11 @@ export default function Usuarios() {
                     ) : (
 
                         <div className="pt-4">
-                            <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+                            <div className="shadow-xl border-2 bg-white dark:bg-gray-700 px-1 py-1 rounded-xl">
+                                    <div className="relative overflow-x-auto shadow-md rounded-lg">
                                 <div className="" style={{ overflow: 'auto', maxHeight: '30rem' }}>
                                     <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                                        <thead className="text-xs text-gray-700 uppercase bg-gray-200 dark:bg-gray-700 dark:text-gray-400">
+                                                <thead className="text-xs text-white uppercase bg-gray-900 dark:bg-gray-700 dark:text-gray-400">
                                             <tr>
                                                 <th scope="col" className="px-6 py-3 text-center" style={{ width: '5%' }}>No.</th>
                                                 <th scope="col" className="px-6 py-3" style={{ width: '17%' }}>Nombre Completo</th>
@@ -153,7 +154,7 @@ export default function Usuarios() {
                                                 <th scope="col" className="px-6 py-3" style={{ width: '10%' }}>Contacto</th>
                                                 <th scope="col" className="px-6 py-3" style={{ width: '5%' }}>Rol</th>
                                                 <th scope="col" className="px-6 py-3" style={{ width: '5%' }}>Estado</th>
-                                                <th scope="col" className="px-6 py-3 text-center" style={{ width: '14%' }}>Acciones</th>
+                                                <th scope="col" className="px-6 py-3" style={{ width: '16%' }}>Acciones</th>
                                             </tr>
                                         </thead>
 
@@ -161,7 +162,7 @@ export default function Usuarios() {
                                             {currentUsuarios.map((item, index) => (
                                                 item !== null && (
                                                     <tr key={index} className="bg-white dark:bg-gray-800">
-                                                        <td className="px-6 py-4 text-gray-900" style={{ width: '5%' }}># {index + 1}</td>
+                                                        <td className="px-6 py-4 text-gray-900" style={{ width: '5%' }}># {item.idUsuario}</td>
                                                         <td className="px-6 py-4 text-gray-900" style={{ width: '17%' }}> {item.nombre} {item.apellidos}</td>
                                                         <td className="px-6 py-4 text-gray-900" style={{ width: '5%' }}><HtmlNewLabel color={"indigo"} icon={User} legend={item.usuario} /></td>
                                                         <td className="px-6 py-4 text-gray-900" style={{ width: '10%' }}>
@@ -176,24 +177,29 @@ export default function Usuarios() {
                                                         </td>
                                                         <td className="px-6 py-4 text-gray-900" style={{ width: '5%' }}><HtmlNewLabel color={"gray"} icon={Cog} legend={item.Rol.nombre} /></td>
                                                         <td className="px-6 py-4 text-gray-900" style={{ width: '5%' }}>{item.bloqueado ? <HtmlNewLabel color={"red"} icon={Ban} legend={"Bloqueado"} /> : <HtmlNewLabel color={"green"} icon={Check} legend={"Activo"} />}</td>
-                                                        <td className="px-6 py-4 text-gray-900" style={{ width: '14%' }}>
+                                                        <td className=" px-6 py-4 text-gray-900" style={{ width: '16%' }}>
+                                                            
                                                             {(item.esEmpleado && !item.bloqueado &&
                                                                 <>
+                                                                <div className="flex grid-cols-2 justify-center items-center">
                                                                     <HtmlTableButton color={"green"} onClick={() => { onSet_IdUsuario(item.idUsuario); (item.horarios.length === 0 ? onModal_AgregarHorario(true) : onModal_EditarHorario(true)); }} tooltip={item.horarios.length != 0 ? 'Editar Horario' : 'Asignar Horario'} hasCornerBadge={item.horarios.length == 0 ? false : true} iconCorner={Pencil} icon={AlarmClock} />
                                                                     <HtmlTableButton color={"yellow"} tooltip={"Evaluar empleado"} icon={SmilePlus} onClick={() => { onSet_IdUsuario(item.idUsuario), onModal_Evaluar(true) }} />
+                                                                </div>
                                                                 </>
                                                             )}
-                                                            {(item.bloqueado ?
-                                                                <>
-                                                                    <HtmlTableButton color={"lime"} tooltip={"Activar / Desbloquear"} icon={UnlockKeyhole} onClick={() => { onSet_IdUsuario(item.idUsuario), onSet_EsBloquear(false), onModal_BloquearDesbloquear(true) }} />
-                                                                </>
-                                                                :
-                                                                <>
-                                                                    <HtmlTableButton color={"blue"} tooltip={"Editar Usuario"} icon={Edit3} onClick={() => { onSet_IdUsuario(item.idUsuario), onModal_EditarUsuario(true) }} />
-
-                                                                    <HtmlTableButton color={"red"} tooltip={"Inactivar / Desbloquear"} icon={BanIcon} onClick={() => { onSet_IdUsuario(item.idUsuario), onSet_EsBloquear(true), onModal_BloquearDesbloquear(true) }} />
-                                                                </>
-                                                            )}
+                                                            
+                                                            
+                                                            <div className="grid grid-cols-2 justify-center items-center">
+                                                                {item.bloqueado ?
+                                                                    <HtmlTableButton color="emerald" tooltip="Activar / Desbloquear" icon={UnlockKeyhole} onClick={() => { onSet_IdUsuario(item.idUsuario); onSet_EsBloquear(false); onModal_BloquearDesbloquear(true); }} />
+                                                                    :
+                                                                    <>
+                                                                        <HtmlTableButton color="blue" tooltip="Editar Usuario" icon={Edit3} onClick={() => { onSet_IdUsuario(item.idUsuario); onModal_EditarUsuario(true); }} />
+                                                                        <HtmlTableButton color="red" tooltip="Inactivar / Desbloquear" icon={BanIcon} onClick={() => { onSet_IdUsuario(item.idUsuario); onSet_EsBloquear(true); onModal_BloquearDesbloquear(true); }} />
+                                                                    </>
+                                                                }
+                                                            </div>
+                                                            
                                                         </td>
                                                     </tr>
                                                 )
@@ -201,6 +207,7 @@ export default function Usuarios() {
                                         </tbody>
                                     </table>
                                 </div>
+                                    </div>
                             </div>
 
                             {/* Paginación */}
