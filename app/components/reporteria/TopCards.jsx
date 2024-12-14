@@ -18,13 +18,17 @@ const TopCards = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            const res = await fetch('/api/reportes/cards');
-            const result = await res.json();
-            setData(result.topCardsData);
+          const res = await fetch('/api/reportes/cards');
+          const result = await res.json();
+          setData(result.topCardsData);
         };
-
+      
         fetchData();
-    }, []);
+    
+        const intervalId = setInterval(fetchData, 5 * 60 * 1000);
+
+        return () => clearInterval(intervalId);
+      }, []);
 
     useEffect(() => {
         setPreviousData(data);

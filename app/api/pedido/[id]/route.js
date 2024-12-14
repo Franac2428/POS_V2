@@ -22,8 +22,10 @@ export async function DELETE(request, { params }) {
         id: Number(params.id),
       },
     });
-    return NextResponse.json(pedido);
+    return NextResponse.json({ message: 'Pedido eliminado correctamente', pedido });
   } catch (error) {
     return NextResponse.json({ error: 'Error al eliminar el pedido' }, { status: 500 });
   }
 }
+
+

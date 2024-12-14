@@ -101,61 +101,61 @@ export async function POST(request) {
 
 //Marcar ASISTENCIA
 export async function PUT(request) {
-
   try {
     const data = await request.json();
     const { idUsuarioEmpleado, idAsistencia, fechaHoraSalida } = data;
 
-    //Validamos que exista o no una asistencia marcada a esa fecha
-    const existeAsistencia = await prisma.asistencia.findFirst({
-      where: {
-        idUsuarioEmpleado: idUsuarioEmpleado,
-        idAsistencia:idAsistencia
-      },
-    });
-
-    if (!existeAsistencia) {
+    // Validate input data
+    if (!idUsuarioEmpleado || !idAsistencia || !fechaHoraSalida) {
       return NextResponse.json({
         code: 400,
         status: "failed",
-        message: "No existe una asistencia para marcar salida"
-      });
+        message: "Datos incompletos. Por favor, proporcione todos los campos requeridos."
+      }, { status: 400 });
     }
 
-    const salidaAsistencia = await prisma.asistencia.update({
-      where:{
-        idAsistencia:idAsistencia,
-        idUsuarioEmpleado:idUsuarioEmpleado
-      },
-      data: {
-        fechaHoraSalida:fechaHoraSalida
+    // Use a transaction for atomic update
+    const result = await prisma.$transaction(async (prisma) => {
+      // Check if attendance exists and is not already marked for exit
+      const existingAttendance = await prisma.asistencia.findFirst({
+        where: {
+          idAsistencia,
+          idUsuarioEmpleado,
+          fechaHoraSalida: null
+        }
+      });
+
+      if (!existingAttendance) {
+        throw new Error("No existe una asistencia válida para marcar salida");
       }
-    })
 
-
-    if (!salidaAsistencia) {
-      return NextResponse.json({
-        code: 400,
-        status: "failed",
-        message: "Error al marcar la salida para esta asistencia"
+      // Update attendance with exit time
+      return prisma.asistencia.update({
+        where: {
+          idAsistencia,
+          idUsuarioEmpleado
+        },
+        data: {
+          fechaHoraSalida
+        }
       });
-    }
+    });
 
     return NextResponse.json({
       code: 200,
       status: "success",
-      data: true,
+      data: result,
       message: "Salida registrada correctamente"
-    });
+    }, { status: 200 });
 
-  }
-  catch (error) {
-    console.error('Error al ingresar la salida:', error);
+  } catch (error) {
+    console.error('Error al marcar la salida:', error);
+
     return NextResponse.json({
       code: 500,
       status: "error",
-      message: "Error al ingresar la salida: " + error.message
-    });
+      message: `Error al marcar la salida: ${error.message}`
+    }, { status: 500 });
   }
 }
 

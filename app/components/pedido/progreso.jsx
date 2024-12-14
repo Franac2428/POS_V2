@@ -1,22 +1,36 @@
+'use client'
 import React from 'react';
-import Cancelar from './cancelar';
-import Finalizado from './finalizado';
 import useSWR, { mutate } from 'swr';
+import Finalizado from './finalizado';
+import Cancelar from './cancelar';
 
 const Progreso = ({ AccordionItem, AccordionTrigger, AccordionContent }) => {
+    // Hook para obtener los datos
     const { data, error } = useSWR(`/api/pedido`, async (url) => {
         const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Error al cargar los datos');
+        }
         const data = await response.json();
         return data;
     });
 
+    // Manejo de errores y estados de carga
     if (error) return <div>Error al cargar los datos</div>;
     if (!data) return <div>Cargando...</div>;
-    if (!data || !Array.isArray(data)) return <div>No hay datos disponibles</div>;
 
+    // Validar estructura de datos
+    if (!Array.isArray(data)) {
+        return <div>No hay datos disponibles</div>;
+    }
+
+    // Filtrar pedidos en progreso
     const pedidosEnProgreso = data.filter(pedido => pedido.estado !== 'FINALIZADO');
+
+    // Función para eliminar pedidos (actualización optimista)
     const eliminarPedido = (pedidoId) => {
-        mutate(`/api/pedido`, data.filter(pedido => pedido.id !== pedidoId), false);
+        const nuevosDatos = data.filter(pedido => pedido.id !== pedidoId);
+        mutate(`/api/pedido`, nuevosDatos, false);
     };
 
     return (
@@ -39,7 +53,7 @@ const Progreso = ({ AccordionItem, AccordionTrigger, AccordionContent }) => {
                                 <tr className="border-b dark:border-gray-600" key={pedido.id}>
                                     <td className="text-sm font-bold text-blue-700 hover:underline py-4">{pedido.id}</td>
                                     <td className="text-sm text-gray-900 dark:text-gray-200">
-                                        {pedido.proveedores ? pedido.proveedores.Nombre : 'Proveedor desconocido'}
+                                        {pedido.proveedores?.Nombre || 'Proveedor desconocido'}
                                     </td>
                                     <td className="text-sm text-gray-900 dark:text-gray-200">{pedido.medioPedido}</td>
                                     <td className="text-sm text-gray-900 dark:text-gray-200">{new Date(pedido.createdAt).toLocaleDateString()}</td>
@@ -62,3 +76,4 @@ const Progreso = ({ AccordionItem, AccordionTrigger, AccordionContent }) => {
 };
 
 export default Progreso;
+

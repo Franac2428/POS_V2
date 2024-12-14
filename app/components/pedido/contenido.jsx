@@ -6,6 +6,7 @@ import * as Tabs from '@radix-ui/react-tabs';
 import Historial from './historial';
 import Progreso from './progreso';
 import Realizar from './realizar';
+import { mutate } from 'swr';
 
 const TabsDemo = () => {
   const [nombre, setNombre] = useState('');
@@ -13,6 +14,9 @@ const TabsDemo = () => {
   const [productos, setProductos] = useState([]);
   const [descripcion, setDescripcion] = useState('');
   const [tipoRadio, setTipoRadio] = useState('correo');
+  const [nuevoPedido, setNuevoPedido] = useState({});
+  const [pedidos, setPedidos] = useState([]);
+
   const handleRadioChange = (event) => {
     setTipoRadio(event.target.value);
   };
@@ -22,6 +26,7 @@ const TabsDemo = () => {
   const handleCantidadChange = (event) => {
     setCantidad(event.target.value);
   };
+
   const agregarProducto = () => {
     if (nombre.trim() !== '' && cantidad.trim() !== '') {
       setProductos([...productos, { nombre: nombre, cantidad: cantidad }]);
@@ -31,6 +36,46 @@ const TabsDemo = () => {
       alert('Por favor, ingrese un nombre y una cantidad válidos.');
     }
   };
+
+  const agregarPedido = async () => {
+    try {
+      const nuevoPedidoData = {
+        proveedor: nombre,
+        cantidad: cantidad,
+        descripcion: descripcion,
+        tipo: tipoRadio,
+        productos: productos,
+      };
+
+      const response = await fetch('/api/pedido', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(nuevoPedidoData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al agregar el pedido');
+      }
+
+      const pedidoAgregado = await response.json();
+      // Actualiza los pedidos con el nuevo pedido agregado
+      setPedidos([...pedidos, pedidoAgregado]);
+
+      // Usar mutate para actualizar la vista en tiempo real sin hacer una nueva solicitud
+      mutate('/api/pedido', [...pedidos, pedidoAgregado], false);
+
+      // Limpiar campos después de agregar el pedido
+      setNombre('');
+      setCantidad('');
+      setDescripcion('');
+      setProductos([]);
+    } catch (error) {
+      console.error('Error al agregar el pedido:', error);
+    }
+  };
+
   const limpiarCampos = () => {
     setNombre('');
     setCantidad('');
@@ -38,6 +83,7 @@ const TabsDemo = () => {
     setProductos([]);
   };
 
+  // Funciones para los componentes de Accordion
   const AccordionItem = React.forwardRef(function AccordionItem(props, forwardedRef) {
     return (
       <Accordion.Item
@@ -97,25 +143,19 @@ const TabsDemo = () => {
       <Tabs.Root className="flex flex-col" defaultValue="tab1">
         <Tabs.List className="shrink-0 flex border-b border-mauve6" aria-label="Manejo de pedidos">
           <Tabs.Trigger
-            className="bg-white px-5 h-[45px] flex-1 flex items-center font-semibold justify-center text-xl leading-none text-mauve11 select-none first:rounded-tl-md last:rounded-tr-md hover:text-custom-yellow data-[state=active]:text-custom-yellow data-[state=active]:shadow-[inset_0_-1px_0_0,0_1px_0_0] data-[state=active]:shadow-current data-[state=active]:focus:relative data-[state=active]:focus:shadow-[0_0_0_2px] data-[state=active]:focus:shadow-black outline-none cursor-default"
+            className="bg-white px-5 h-[45px] flex-1 flex items-center font-semibold justify-center text-xl leading-none text-mauve11 select-none first:rounded-tl-md last:rounded-tr-md hover:text-custom-yellow data-[state=active]:text-custom-yellow"
             value="tab1"
           >
             Realizar Pedido
           </Tabs.Trigger>
           <Tabs.Trigger
-            className="bg-white px-5 h-[45px] flex-1 flex items-center font-semibold justify-center text-xl leading-none text-mauve11 select-none first:rounded-tl-md last:rounded-tr-md hover:text-custom-yellow data-[state=active]:text-custom-yellow data-[state=active]:shadow-[inset_0_-1px_0_0,0_1px_0_0] data-[state=active]:shadow-current data-[state=active]:focus:relative data-[state=active]:focus:shadow-[0_0_0_2px] data-[state=active]:focus:shadow-black outline-none cursor-default"
+            className="bg-white px-5 h-[45px] flex-1 flex items-center font-semibold justify-center text-xl leading-none text-mauve11 select-none first:rounded-tl-md last:rounded-tr-md hover:text-custom-yellow data-[state=active]:text-custom-yellow"
             value="tab2"
           >
             Historial
           </Tabs.Trigger>
         </Tabs.List>
-        <Tabs.Content
-          className="grow p-5 bg-white rounded-b-md outline-none focus:shadow-[0_0_0_2px] focus:shadow-black"
-          value="tab1"
-        >
-          <p className="mb-5 text-mauve11 text-[15px] leading-normal">
-            Los detalles de los pedidos en progreso se encuentran en el correo electrónico.
-          </p>
+        <Tabs.Content value="tab1">
           <fieldset className="mb-[15px] w-full flex flex-col justify-start">
             <Accordion.Root
               className="bg-mauve6 w-full rounded-md shadow-[0_2px_10px] shadow-black/5"
@@ -124,19 +164,21 @@ const TabsDemo = () => {
               collapsible
             >
               <Progreso AccordionItem={AccordionItem} AccordionTrigger={AccordionTrigger} AccordionContent={AccordionContent} />
-              <Realizar AccordionItem={AccordionItem} AccordionTrigger={AccordionTrigger} AccordionContent={AccordionContent} />
+              <Realizar 
+                AccordionItem={AccordionItem} 
+                AccordionTrigger={AccordionTrigger} 
+                AccordionContent={AccordionContent} 
+                agregarPedido={agregarPedido} 
+              />
             </Accordion.Root>
           </fieldset>
         </Tabs.Content>
-        <Tabs.Content
-          className="grow p-5 overflow-x-auto bg-white rounded-b-md outline-none focus:shadow-[0_0_0_2px] focus:shadow-black"
-          value="tab2"
-        >
-          <Historial />
+        <Tabs.Content value="tab2">
+          <Historial pedidos={pedidos} />
         </Tabs.Content>
       </Tabs.Root>
     </>
   );
-}
+};
 
 export default TabsDemo;

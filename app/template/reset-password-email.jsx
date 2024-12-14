@@ -1,7 +1,7 @@
 import * as React from "react"
 
 export const ResetPasswordEmailTemplate = ({ correo, resetPasswordToken }) => {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
     const resetLink = `${baseUrl}/auth/reset?token=${resetPasswordToken}`;
 
     return (

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import React from 'react';
 import useSWR from 'swr';
 
@@ -7,58 +7,47 @@ const fetcher = async (url) => {
     if (!response.ok) {
         throw new Error('Error al cargar los datos');
     }
-    const data = await response.json();
-    return data;
+    return response.json();
 };
 
 const Monitorizacion = () => {
-    const { data, error } = useSWR(`/api/marcar`, fetcher);
+    const { data, error, isLoading } = useSWR(`/api/horas`, fetcher);
 
     if (error) return <div>Error al cargar los datos</div>;
-    if (!data) return <div>Cargando...</div>;
-    if (!Array.isArray(data)) return <div>No hay datos disponibles</div>;
+    if (isLoading) return <div>Cargando...</div>;
+    if (!Array.isArray(data) || data.length === 0) return <div>No hay asistencias registradas</div>;
 
-    const asistencias = data.map((asistencia) => ({
-        id: asistencia.id,
-        nombre: asistencia.empleado?.nombre || 'Desconocido',
-        apellido: asistencia.empleado?.apellido || 'Desconocido',
-        fecha: new Date(asistencia.fecha).toLocaleDateString(),
-        horaEntrada: new Date(asistencia?.entrada).toUTCString().split(' ')[4],
-        horaSalida: new Date(asistencia?.salida).toUTCString().split(' ')[4] || 'Aún no ha registrado salida',
-        nota: asistencia?.observacion || 'No observaciones en este turno',
-    }));
-;
     return (
         <div className="max-w-7xl mx-auto py-4">
-            <h1 className="text-3xl text-gray-900 dark:text-gray-100 font-semibold mb-2">Monitorización de Horarios</h1>
-            <div className="shadow-lg col-span-10 bg-white dark:bg-gray-700 px-5 py-4 rounded-lg">
-                        <table className="w-full">
-                            <thead>
-                                <tr>
-                                    <th className="text-sm font-semibold text-gray-600 dark:text-gray-400 pb-4"> Nombre</th>
-                                    <th className="text-sm font-semibold text-gray-600 dark:text-gray-400 pb-4"> Apellido</th>
-                                    <th className="text-sm font-semibold text-gray-600 dark:text-gray-400 pb-4"> Día</th>
-                                    <th className="text-sm font-semibold text-gray-600 dark:text-gray-400 pb-4">  Hora de entrada </th>
-                                    <th className="text-sm font-semibold text-gray-600 dark:text-gray-400 pb-4">  Hora de salida </th>
-                                    <th className="text-sm font-semibold text-gray-600 dark:text-gray-400 pb-4"> Notas de empleado </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {asistencias.map((asistencia) => (
-                                    <tr className="" key={asistencia.id}>                                        
-                                        <td className="text-center text-sm text-gray-900 dark:text-gray-200"> {asistencia.nombre}</td>
-                                        <td className="text-center text-sm text-gray-900 dark:text-gray-200"> {asistencia.apellido}</td>
-                                        <td className="text-center text-sm text-gray-900 dark:text-gray-200"> {asistencia.fecha}</td>
-                                        <td className="text-center text-sm text-gray-900 dark:text-gray-200"> {asistencia.horaEntrada}</td>                                    
-                                        <td className="text-center text-sm text-gray-900 dark:text-gray-200"> {asistencia.horaSalida}</td>
-                                        <td className="text-center text-sm text-gray-900 dark:text-gray-200"> {asistencia.nota}</td>
-
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
+            <h1 className="text-3xl text-gray-900 dark:text-gray-100 font-semibold mb-2">
+                Monitorización de Horarios
+            </h1>
+            <div className="shadow-lg bg-white dark:bg-gray-700 px-5 py-4 rounded-lg">
+                <table className="w-full border-collapse">
+                    <thead>
+                        <tr>
+                            <th className="border-b p-2 text-left text-sm font-semibold">Nombre</th>
+                            <th className="border-b p-2 text-left text-sm font-semibold">Apellido</th>
+                            <th className="border-b p-2 text-left text-sm font-semibold">Fecha</th>
+                            <th className="border-b p-2 text-left text-sm font-semibold">Hora de Entrada</th>
+                            <th className="border-b p-2 text-left text-sm font-semibold">Hora de Salida</th>
+                            <th className="border-b p-2 text-left text-sm font-semibold">Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.map((asistencia) => (
+                            <tr key={asistencia.id}>
+                                <td className="border-b p-2 text-sm">{asistencia.nombre}</td>
+                                <td className="border-b p-2 text-sm">{asistencia.apellido}</td>
+                                <td className="border-b p-2 text-sm">{asistencia.fecha}</td>
+                                <td className="border-b p-2 text-sm">{asistencia.horaEntrada}</td>
+                                <td className="border-b p-2 text-sm">{asistencia.horaSalida}</td>
+                                <td className="border-b p-2 text-sm">{asistencia.observacion}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };

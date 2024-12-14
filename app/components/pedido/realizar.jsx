@@ -17,7 +17,7 @@ const Realizar = ({ AccordionItem, AccordionTrigger, AccordionContent }) => {
 
   const handleAgregar = handleSubmit(async (data) => {
     const proveedorId = parseInt(data.proveedor, 10); 
-
+  
     const pedido = {
       proveedorId: proveedorId,
       medioPedido: tipoRadio,
@@ -25,7 +25,7 @@ const Realizar = ({ AccordionItem, AccordionTrigger, AccordionContent }) => {
       observaciones: data.descripcion,
       estado: 'EN_PROGRESO',
     };
-
+  
     try {
       const res = await fetch(`/api/pedido`, {
         method: 'POST',
@@ -34,13 +34,18 @@ const Realizar = ({ AccordionItem, AccordionTrigger, AccordionContent }) => {
           'Content-Type': 'application/json'
         }
       });
-
+  
       if (res.ok) {
         const newPedido = await res.json();
+        
         toast.success('Nuevo pedido realizado con éxito');
         reset();
         setProductos([]); // Limpiar lista de productos después de realizar el pedido
-        mutate(`/api/pedido`, (currentData) => [...currentData, newPedido], false);
+        
+        // Mutate the data with the full pedido information
+        mutate(`/api/pedido`, (currentData) => {
+          return [...currentData, newPedido];
+        }, { revalidate: false });
       } else {
         const errorData = await res.json();
         toast.error(`Error: ${errorData.message}`);

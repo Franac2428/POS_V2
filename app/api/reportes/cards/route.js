@@ -50,9 +50,18 @@ export async function GET() {
             ventasMensuales: ventasMensuales._sum.total || 0,
         };
 
-        return NextResponse.json({ topCardsData });
-
-    } catch (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ topCardsData }, {
+            headers: {
+              'Cache-Control': 'no-store, max-age=0'
+            }
+          });
+      
+        } catch (error) {
+          return NextResponse.json({ error: error.message }, { 
+            status: 500,
+            headers: {
+              'Cache-Control': 'no-store, max-age=0'
+            }
+          });
+      }
     }
-}
